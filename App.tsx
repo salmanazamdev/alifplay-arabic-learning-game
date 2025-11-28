@@ -1,12 +1,35 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AppNavigator from './src/navigation/AppNavigator';
+import { saveProgress, loadProgress, UserProgress } from './src/utils/storage';
 
 export default function App() {
+  useEffect(() => {
+    // Initialize default progress if none exists
+    const initializeProgress = async () => {
+      const existing = await loadProgress();
+      if (!existing) {
+        const defaultProgress: UserProgress = {
+          starsEarned: 0,
+          levelsCompleted: [],
+          badges: [],
+          tracingCompleted: [],
+          pronunciationScore: 0,
+          imageMatchScore: 0,
+          quizScore: 0,
+        };
+        await saveProgress(defaultProgress);
+      }
+    };
+    initializeProgress();
+  }, []);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppNavigator />
       <StatusBar style="auto" />
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
