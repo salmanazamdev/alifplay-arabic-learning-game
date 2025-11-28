@@ -1,0 +1,31 @@
+{
+  "audio": {
+    "alif.mp3": "",
+    "baa.mp3": "",
+    "success.mp3": "",
+    "asad.mp3": "",
+    "qitta.mp3": "",
+    "kitab.mp3": ""
+    // Add all 28 letter sounds and more as needed
+  },
+  "images": {
+    "lion.png": "",
+    "duck.png": "",
+    "cat.png": "",
+    "book.png": "",
+    "badge.png": "",
+    "reward.png": ""
+    // Add all letter guides and vocabulary images
+  },
+  "fonts": {
+    "Amiri-Regular.ttf": "",
+    "Cairo-Regular.ttf": ""
+    // Add more fonts if needed
+  },
+  "icons": {
+    "icon.png": "",
+    "splash.png": "",
+    "adaptive-icon.png": "",
+    "favicon.png": ""
+  }
+}
