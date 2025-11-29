@@ -5,14 +5,21 @@ This guide helps you set up all assets required for the AlifPlay Expo React Nati
 
 ## 🎵 Audio Assets
 
+
 ### Arabic Letter Pronunciations (28 letters)
-The script attempts to download from open-source repositories. If any fail:
-- **Option 1**: Use Text-to-Speech services
-  - Google Cloud TTS: https://cloud.google.com/text-to-speech
-  - Amazon Polly (Arabic voice): https://aws.amazon.com/polly/
-  
-- **Option 2**: Record yourself or hire a native speaker
-- **Option 3**: Use free Arabic pronunciation resources:
+Use the dedicated script to generate correct MP3s for each letter using free TTS:
+
+```powershell
+node scripts/download-arabic-tts.js
+```
+
+This script uses Google Translate's TTS endpoint to generate Arabic letter audio files automatically. No API key required.
+
+If you want higher quality or custom recordings:
+- Use Google Cloud TTS: https://cloud.google.com/text-to-speech
+- Use Amazon Polly (Arabic voice): https://aws.amazon.com/polly/
+- Record yourself or hire a native speaker
+- Use free Arabic pronunciation resources:
   - https://www.101languages.net/arabic/
   - https://www.arabicpod101.com/
 
@@ -20,14 +27,17 @@ The script attempts to download from open-source repositories. If any fail:
 - `success.mp3`: Downloaded from Mixkit (free license)
 - Alternative sources: https://freesound.org/, https://mixkit.co/free-sound-effects/
 
+
 ## 🖼️ Image Assets
 
 ### Vocabulary Images
-Using Twitter Emojis (open source, Apache 2.0 license):
-- lion.png 🦁
-- duck.png 🦆
-- cat.png 🐈
-- book.png 📖
+Use the dedicated script to download emoji images automatically:
+
+```powershell
+node scripts/download-images.js
+```
+
+This script downloads open-source emoji PNGs (lion, duck, cat, book) into `assets/images/`.
 
 **Need more images?**
 - Use https://github.com/twitter/twemoji
@@ -39,25 +49,25 @@ Using Twitter Emojis (open source, Apache 2.0 license):
 
 ## 🔤 Font Assets
 
-### Arabic Fonts (Downloaded automatically)
-1. **Amiri** - Traditional Arabic typography
-2. **Cairo** - Modern, clean Arabic font
 
-### To use fonts in Expo:
-```bash
-npx expo install expo-font
+### Arabic Fonts (Expo Google Fonts)
+Use Expo Google Fonts for easy, reliable Arabic font integration:
+
+```powershell
+npm install @expo-google-fonts/cairo expo-font
 ```
 
-Then add to App.tsx:
+In your App.tsx:
 ```typescript
-import * as Font from 'expo-font';
-import { useEffect, useState } from 'react';
+import { useFonts, Cairo_400Regular, Cairo_700Bold } from '@expo-google-fonts/cairo';
 
-const [fontsLoaded] = Font.useFonts({
-  'Amiri-Regular': require('./assets/fonts/Amiri-Regular.ttf'),
-  'Cairo-Regular': require('./assets/fonts/Cairo-Regular.ttf'),
+const [fontsLoaded] = useFonts({
+  Cairo_400Regular,
+  Cairo_700Bold,
 });
 ```
+
+No need to manually download font files or fix broken links.
 
 ## 📱 App Icons & Splash Screen
 
@@ -104,25 +114,25 @@ Use design tools:
   - https://www.flaticon.com/
   - https://iconscout.com/
 
-## 🚀 Running the Download Script
+
+## 🚀 Running Asset Scripts
 
 ```powershell
-# Download all available assets
-node download-assets.js
+# Download Arabic letter audio
+node scripts/download-arabic-tts.js
 
-# Check what was downloaded
-ls assets/audio
-ls assets/images
-ls assets/fonts
-ls assets/icons
+# Download vocabulary images
+node scripts/download-images.js
 ```
 
 ## ✅ Checklist
 
-- [ ] Run `node download-assets.js`
+
+- [ ] Run `node scripts/download-arabic-tts.js`
+- [ ] Run `node scripts/download-images.js`
 - [ ] Verify audio files downloaded
 - [ ] Check image files
-- [ ] Confirm fonts downloaded
+- [ ] Confirm fonts loaded via Expo Google Fonts
 - [ ] Create app icon (1024x1024)
 - [ ] Create splash screen (1284x2778)
 - [ ] Generate adaptive icon
@@ -138,20 +148,24 @@ If your assets exceed 50MB:
 
 ## 🎯 Quick Start
 
+
 ```powershell
-# 1. Download assets
-node download-assets.js
+# 1. Download Arabic letter audio
+node scripts/download-arabic-tts.js
 
-# 2. Install font dependencies
-npm install expo-font
+# 2. Download vocabulary images
+node scripts/download-images.js
 
-# 3. Create your app icon
+# 3. Install font dependencies
+npm install @expo-google-fonts/cairo expo-font
+
+# 4. Create your app icon
 # (Use Canva/Figma to create icon.png)
 
-# 4. Generate all icon variants
+# 5. Generate all icon variants
 npx expo-generate-icons
 
-# 5. Test the app
+# 6. Test the app
 npx expo start
 ```
 
