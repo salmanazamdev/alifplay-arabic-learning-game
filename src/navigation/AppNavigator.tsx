@@ -3,12 +3,14 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import HomeScreen from '../screens/HomeScreen';
+import SplashScreen from '../screens/SplashScreen';
 import TracingScreen from '../screens/TracingScreen';
 import PronunciationScreen from '../screens/PronunciationScreen';
 import ImageMatchScreen from '../screens/ImageMatchScreen';
 import QuizScreen from '../screens/QuizScreen';
 
 export type RootStackParamList = {
+  Splash: undefined;
   Home: undefined;
   Tracing: undefined;
   Pronunciation: undefined;
@@ -22,12 +24,13 @@ const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="Splash"
         screenOptions={{
           headerShown: false,
           cardStyle: { backgroundColor: '#F8F9FA' },
         }}
       >
+        <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Tracing" component={TracingScreen} />
         <Stack.Screen name="Pronunciation" component={PronunciationScreen} />
