@@ -4,7 +4,7 @@
     "slug": "alifplay",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/branding/logoicononly.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -21,7 +21,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/branding/logoicononlytrans.png",
         "backgroundColor": "#FFD93D"
       },
       "package": "com.salmanazam.alifplay",
