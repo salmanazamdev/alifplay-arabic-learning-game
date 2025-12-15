@@ -27,9 +27,6 @@
       "package": "com.salmanazam.alifplay",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     }
   }
 }
