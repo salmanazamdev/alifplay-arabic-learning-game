@@ -21,10 +21,22 @@ const QuizScreen: React.FC = () => {
   const quizData = arabicLetters.slice(0, 5).map((letter) => ({
     question: `What is this letter?`,
     letter: letter.letter,
+    audioFile: letter.audioFile,
     options: [letter.name, 'Wrong 1', 'Wrong 2', 'Wrong 3']
       .sort(() => Math.random() - 0.5),
     correct: letter.name,
   }));
+
+  // Play audio when question changes
+  React.useEffect(() => {
+    const playQuestionAudio = async () => {
+      const current = quizData[currentQuestion];
+      if (current?.audioFile) {
+        await playSound(current.audioFile);
+      }
+    };
+    playQuestionAudio();
+  }, [currentQuestion]);
 
   const handleAnswer = async (answer: string) => {
     setAnswered(true);
@@ -65,7 +77,13 @@ const QuizScreen: React.FC = () => {
 
       <View style={styles.questionContainer}>
         <Text style={styles.question}>{current.question}</Text>
-        <Text style={styles.letter}>{current.letter}</Text>
+        <TouchableOpacity 
+          style={styles.audioButton}
+          onPress={() => playSound(current.audioFile)}
+        >
+          <Text style={styles.letter}>{current.letter}</Text>
+          <Text style={styles.audioHint}>🔊 Tap to hear</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.options}>
@@ -119,10 +137,27 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: 20,
   },
+  audioButton: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   letter: {
     fontSize: 120,
     fontWeight: '700',
     color: Colors.primaryPurple,
+  },
+  audioHint: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.primaryPurple,
+    marginTop: 10,
   },
   options: {
     padding: 20,
