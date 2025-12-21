@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
+import { ProgressBar, GradientButton } from '../components';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
 import { addStar } from '../utils/storage';
@@ -112,9 +113,7 @@ const TracingScreen: React.FC = () => {
 
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
-          <View style={styles.progressBackground}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
-          </View>
+          <ProgressBar progress={progress} />
         </View>
 
         {/* Letter Display */}
@@ -278,17 +277,6 @@ const styles = StyleSheet.create({
   progressContainer: {
     paddingHorizontal: Spacing.screenPadding,
     marginBottom: Spacing.lg,
-  },
-  progressBackground: {
-    height: 8,
-    backgroundColor: Colors.borderLight,
-    borderRadius: BorderRadius.full,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.primaryBlue,
-    borderRadius: BorderRadius.full,
   },
   letterDisplay: {
     paddingHorizontal: Spacing.screenPadding,

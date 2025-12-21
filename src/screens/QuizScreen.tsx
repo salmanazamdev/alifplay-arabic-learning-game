@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
+import { ProgressBar, GradientButton } from '../components';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
 import { addStar } from '../utils/storage';
@@ -119,9 +120,7 @@ const QuizScreen: React.FC = () => {
 
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
-        <View style={styles.progressBackground}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
-        </View>
+        <ProgressBar progress={progress} />
         <Text style={styles.progressText}>
           Question {currentQuestion + 1} of {quizData.length}
         </Text>
@@ -240,23 +239,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenPadding,
     marginBottom: Spacing.xl,
   },
-  progressBackground: {
-    height: 8,
-    backgroundColor: Colors.borderLight,
-    borderRadius: BorderRadius.full,
-    overflow: 'hidden',
-    marginBottom: Spacing.sm,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.primaryPurple,
-    borderRadius: BorderRadius.full,
-  },
   progressText: {
     fontSize: FontSize.caption,
     fontWeight: FontWeight.semibold,
     color: Colors.textSecondary,
     textAlign: 'center',
+    marginTop: Spacing.sm,
   },
   questionContainer: {
     alignItems: 'center',

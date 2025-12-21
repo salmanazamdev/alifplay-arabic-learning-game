@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
+import { StatBadge, GradientCard } from '../components';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
 
@@ -53,7 +54,7 @@ const PronunciationScreen: React.FC = () => {
     const isSelected = selectedId === item.id;
     
     // Different gradient colors for variety
-    const gradients = [
+    const gradients: [string, string][] = [
       [Colors.primaryBlue, Colors.primaryBlueDark],
       [Colors.primaryPink, Colors.primaryPinkDark],
       [Colors.primaryPurple, Colors.primaryPurpleDark],
@@ -64,30 +65,22 @@ const PronunciationScreen: React.FC = () => {
     const gradient = gradients[index % gradients.length];
     
     return (
-      <TouchableOpacity
+      <GradientCard
         style={styles.letterCard}
+        gradientColors={gradient}
         onPress={() => handleLetterPress(item)}
-        activeOpacity={0.8}
+        isSelected={isSelected}
+        contentStyle={styles.letterCardContent}
       >
-        <LinearGradient
-          colors={isSelected ? [gradient[1], gradient[0]] : gradient}
-          style={[
-            styles.letterCardGradient,
-            isSelected && styles.letterCardSelected,
-          ]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.audioIconContainer}>
-            <Text style={styles.audioIcon}>🔊</Text>
-          </View>
-          <Text style={styles.letterText}>{item.letter}</Text>
-          <View style={styles.letterInfo}>
-            <Text style={styles.letterLabel}>{item.name}</Text>
-            <Text style={styles.letterPronunciation}>"{item.pronunciation}"</Text>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
+        <View style={styles.audioIconContainer}>
+          <Text style={styles.audioIcon}>🔊</Text>
+        </View>
+        <Text style={styles.letterText}>{item.letter}</Text>
+        <View style={styles.letterInfo}>
+          <Text style={styles.letterLabel}>{item.name}</Text>
+          <Text style={styles.letterPronunciation}>"{item.pronunciation}"</Text>
+        </View>
+      </GradientCard>
     );
   };
 
@@ -100,10 +93,10 @@ const PronunciationScreen: React.FC = () => {
         <Text style={styles.title}>🔊 Pronunciation Practice</Text>
         <Text style={styles.subtitle}>Tap any letter to hear its sound!</Text>
         <View style={styles.statsContainer}>
-          <View style={styles.statBadge}>
-            <Text style={styles.statValue}>{arabicLetters.length}</Text>
-            <Text style={styles.statLabel}>Letters</Text>
-          </View>
+          <StatBadge
+            value={arabicLetters.length}
+            label="Letters"
+          />
         </View>
       </View>
 
@@ -150,25 +143,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.md,
   },
-  statBadge: {
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    alignItems: 'center',
-    ...Shadows.small,
-  },
-  statValue: {
-    fontSize: FontSize.h3,
-    fontWeight: FontWeight.black,
-    color: Colors.primaryBlue,
-    marginBottom: Spacing.xs,
-  },
-  statLabel: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.semibold,
-    color: Colors.textSecondary,
-  },
   grid: {
     paddingHorizontal: Spacing.screenPadding,
   },
@@ -178,18 +152,11 @@ const styles = StyleSheet.create({
   },
   letterCard: {
     width: CARD_WIDTH,
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
-    ...Shadows.medium,
   },
-  letterCardGradient: {
-    padding: Spacing.lg,
+  letterCardContent: {
     alignItems: 'center',
     minHeight: 160,
     justifyContent: 'space-between',
-  },
-  letterCardSelected: {
-    transform: [{ scale: 0.95 }],
   },
   audioIconContainer: {
     width: 32,
