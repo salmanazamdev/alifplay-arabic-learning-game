@@ -2,6 +2,13 @@ import { Audio } from 'expo-av';
 
 let currentSound: Audio.Sound | null = null;
 
+// Configure audio mode for better compatibility
+Audio.setAudioModeAsync({
+  playsInSilentModeIOS: true,
+  staysActiveInBackground: false,
+  shouldDuckAndroid: true,
+});
+
 // Static audio asset mapping for Expo (dynamic requires not supported)
 const audioAssets: { [key: string]: any } = {
   'alif.mp3': require('../../assets/audio/alif.mp3'),
@@ -44,6 +51,7 @@ export const playSound = async (audioFile: string): Promise<void> => {
     if (currentSound) {
       await currentSound.stopAsync();
       await currentSound.unloadAsync();
+      currentSound = null;
     }
 
     // Get audio asset from mapping
@@ -54,10 +62,14 @@ export const playSound = async (audioFile: string): Promise<void> => {
       return;
     }
 
-    // Load and play new sound
-    const { sound } = await Audio.Sound.createAsync(audioSource);
+    // Load and play new sound with proper settings
+    const { sound } = await Audio.Sound.createAsync(
+      audioSource,
+      { shouldPlay: true, volume: 1.0 },
+      null,
+      true // downloadFirst parameter for better reliability
+    );
     currentSound = sound;
-    await sound.playAsync();
   } catch (error) {
     console.error('Error playing sound:', error);
   }
