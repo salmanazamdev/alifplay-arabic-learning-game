@@ -233,11 +233,3 @@ const styles = StyleSheet.create({
 });
 
 export default PronunciationScreen;
-  letterPronunciation: {
-    fontSize: 14,
-    color: Colors.textLight,
-    marginTop: 4,
-  },
-});
-
-export default PronunciationScreen;
