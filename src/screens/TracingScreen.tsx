@@ -91,8 +91,6 @@ const TracingScreen: React.FC = () => {
 
   const progress = ((currentIndex + 1) / arabicLetters.length) * 100;
 
-  const progress = ((currentIndex + 1) / arabicLetters.length) * 100;
-
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={[styles.container, { paddingTop: insets.top }]}>

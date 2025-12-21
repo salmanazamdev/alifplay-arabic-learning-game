@@ -34,8 +34,6 @@ const QuizScreen: React.FC = () => {
 
   const current = quizData[currentQuestion];
 
-  const current = quizData[currentQuestion];
-
   // Play audio when question changes
   useEffect(() => {
     const playQuestionAudio = async () => {
@@ -332,15 +330,6 @@ const styles = StyleSheet.create({
   },
   wrongOptionText: {
     color: Colors.errorDark,
-  },
-});
-
-export default QuizScreen;
-  },
-  optionText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
   },
 });
 

@@ -361,8 +361,3 @@ const styles = StyleSheet.create({
 });
 
 export default ImageMatchScreen;
-    fontSize: 48,
-  },
-});
-
-export default ImageMatchScreen;
