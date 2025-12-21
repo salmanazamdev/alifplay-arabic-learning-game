@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.h2,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    color: Colors.text,
     marginBottom: Spacing.md,
     textAlign: 'center',
   },
