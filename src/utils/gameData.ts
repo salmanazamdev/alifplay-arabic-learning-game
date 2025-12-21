@@ -268,17 +268,18 @@ export interface ImageMatchPair {
   word: string;
   image: string;
   audio: string;
+  emoji: string; // Temporary emoji representation until real images are added
 }
 
 export const imageMatchData: ImageMatchPair[] = [
-  { id: '1', word: 'أسد', image: 'lion.png', audio: 'asad.mp3' },
-  { id: '2', word: 'قطة', image: 'cat.png', audio: 'qitta.mp3' },
-  { id: '3', word: 'كتاب', image: 'book.png', audio: 'kitab.mp3' },
-  { id: '4', word: 'بطة', image: 'duck.png', audio: 'batta.mp3' },
-  { id: '5', word: 'فيل', image: 'elephant.png', audio: 'feel.mp3' },
-  { id: '6', word: 'سمكة', image: 'fish.png', audio: 'samaka.mp3' },
-  { id: '7', word: 'شمس', image: 'sun.png', audio: 'shams.mp3' },
-  { id: '8', word: 'قمر', image: 'moon.png', audio: 'qamar.mp3' },
-  { id: '9', word: 'زهرة', image: 'flower.png', audio: 'zahra.mp3' },
-  { id: '10', word: 'شجرة', image: 'tree.png', audio: 'shajara.mp3' },
+  { id: '1', word: 'أسد', image: 'lion.png', audio: 'asad.mp3', emoji: '🦁' },
+  { id: '2', word: 'قطة', image: 'cat.png', audio: 'qitta.mp3', emoji: '🐱' },
+  { id: '3', word: 'كتاب', image: 'book.png', audio: 'kitab.mp3', emoji: '📚' },
+  { id: '4', word: 'بطة', image: 'duck.png', audio: 'batta.mp3', emoji: '🦆' },
+  { id: '5', word: 'فيل', image: 'elephant.png', audio: 'feel.mp3', emoji: '🐘' },
+  { id: '6', word: 'سمكة', image: 'fish.png', audio: 'samaka.mp3', emoji: '🐟' },
+  { id: '7', word: 'شمس', image: 'sun.png', audio: 'shams.mp3', emoji: '☀️' },
+  { id: '8', word: 'قمر', image: 'moon.png', audio: 'qamar.mp3', emoji: '🌙' },
+  { id: '9', word: 'زهرة', image: 'flower.png', audio: 'zahra.mp3', emoji: '🌸' },
+  { id: '10', word: 'شجرة', image: 'tree.png', audio: 'shajara.mp3', emoji: '🌳' },
 ];
