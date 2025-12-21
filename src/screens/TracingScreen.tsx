@@ -13,7 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
+import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius, TextStyles } from '../constants';
 import { ProgressBar, GradientButton } from '../components';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
@@ -251,12 +251,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    ...Typography.title2,
+    fontSize: FontSize.h2,
+    fontWeight: FontWeight.bold,
     fontFamily: 'Cairo_700Bold',
-    color: Colors.textPrimary,
+    color: Colors.text,
   },
   subtitle: {
-    ...Typography.body,
+    fontSize: FontSize.body,
     color: Colors.textSecondary,
     marginTop: Spacing.xs,
   },
@@ -268,8 +269,8 @@ const styles = StyleSheet.create({
     ...Shadows.small,
   },
   progressText: {
-    ...Typography.body,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
     color: Colors.white,
   },
   progressContainer: {
@@ -302,17 +303,18 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   letterName: {
-    ...Typography.title3,
+    fontSize: FontSize.h3,
+    fontWeight: FontWeight.semibold,
     fontFamily: 'Cairo_600SemiBold',
     color: Colors.white,
   },
   pronunciation: {
-    ...Typography.body,
+    fontSize: FontSize.body,
     color: 'rgba(255, 255, 255, 0.9)',
     marginTop: Spacing.xs,
   },
   audioHint: {
-    ...Typography.caption,
+    fontSize: FontSize.caption,
     color: 'rgba(255, 255, 255, 0.8)',
     marginTop: Spacing.sm,
   },
@@ -356,8 +358,9 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   canvasHintText: {
-    ...Typography.title3,
-    color: Colors.textTertiary,
+    fontSize: FontSize.h3,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textLight,
   },
   successMessage: {
     marginHorizontal: Spacing.screenPadding,
@@ -372,7 +375,8 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   successText: {
-    ...Typography.title2,
+    fontSize: FontSize.h2,
+    fontWeight: FontWeight.bold,
     fontFamily: 'Cairo_700Bold',
     color: Colors.white,
     marginTop: Spacing.xs,
@@ -394,8 +398,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   clearButtonText: {
-    ...Typography.body,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
     color: Colors.textSecondary,
   },
   completeButton: {
@@ -411,8 +415,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   buttonText: {
-    ...Typography.body,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
     color: Colors.white,
   },
 });
