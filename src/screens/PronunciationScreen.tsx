@@ -3,54 +3,108 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   FlatList,
   Dimensions,
+  StatusBar,
+  Animated,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '../constants/Colors';
+import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 60) / 2;
+const CARD_WIDTH = (width - Spacing.screenPadding * 2 - Spacing.md) / 2;
 
 const PronunciationScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [playingAnimation] = useState(new Animated.Value(1));
 
   const handleLetterPress = async (letter: typeof arabicLetters[0]) => {
     setSelectedId(letter.id);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Audio wave animation
+    Animated.sequence([
+      Animated.timing(playingAnimation, {
+        toValue: 1.1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(playingAnimation, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
     await playSound(letter.audioFile);
+    
     setTimeout(() => {
       setSelectedId(null);
-    }, 500);
+    }, 600);
   };
 
-  const renderLetter = ({ item }: { item: typeof arabicLetters[0] }) => {
+  const renderLetter = ({ item, index }: { item: typeof arabicLetters[0]; index: number }) => {
     const isSelected = selectedId === item.id;
+    
+    // Different gradient colors for variety
+    const gradients = [
+      [Colors.primaryBlue, Colors.primaryBlueDark],
+      [Colors.primaryPink, Colors.primaryPinkDark],
+      [Colors.primaryPurple, Colors.primaryPurpleDark],
+      [Colors.primaryOrange, Colors.primaryOrangeDark],
+      [Colors.primaryGreen, Colors.primaryGreenDark],
+      [Colors.primaryYellow, Colors.primaryYellowDark],
+    ];
+    const gradient = gradients[index % gradients.length];
+    
     return (
       <TouchableOpacity
-        style={[
-          styles.letterCard,
-          isSelected && styles.letterCardSelected,
-        ]}
+        style={styles.letterCard}
         onPress={() => handleLetterPress(item)}
         activeOpacity={0.8}
       >
-        <Text style={styles.letterText}>{item.letter}</Text>
-        <Text style={styles.letterLabel}>{item.name}</Text>
-        <Text style={styles.letterPronunciation}>"{item.pronunciation}"</Text>
+        <LinearGradient
+          colors={isSelected ? [gradient[1], gradient[0]] : gradient}
+          style={[
+            styles.letterCardGradient,
+            isSelected && styles.letterCardSelected,
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.audioIconContainer}>
+            <Text style={styles.audioIcon}>🔊</Text>
+          </View>
+          <Text style={styles.letterText}>{item.letter}</Text>
+          <View style={styles.letterInfo}>
+            <Text style={styles.letterLabel}>{item.name}</Text>
+            <Text style={styles.letterPronunciation}>"{item.pronunciation}"</Text>
+          </View>
+        </LinearGradient>
       </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>🔊 Pronunciation Practice</Text>
-        <Text style={styles.subtitle}>Tap to hear the sound!</Text>
+        <Text style={styles.subtitle}>Tap any letter to hear its sound!</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.statBadge}>
+            <Text style={styles.statValue}>{arabicLetters.length}</Text>
+            <Text style={styles.statLabel}>Letters</Text>
+          </View>
+        </View>
       </View>
 
       <FlatList
@@ -58,10 +112,14 @@ const PronunciationScreen: React.FC = () => {
         renderItem={renderLetter}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={styles.grid}
+        contentContainerStyle={[
+          styles.grid,
+          { paddingBottom: insets.bottom + Spacing.xl }
+        ]}
         columnWrapperStyle={styles.row}
+        showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -71,53 +129,110 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
-    padding: 20,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingVertical: Spacing.xl,
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: FontSize.h2,
+    fontWeight: FontWeight.extrabold,
     color: Colors.text,
+    marginBottom: Spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: Colors.textLight,
-    marginTop: 8,
+    fontSize: FontSize.bodySmall,
+    fontWeight: FontWeight.medium,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  statBadge: {
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    ...Shadows.small,
+  },
+  statValue: {
+    fontSize: FontSize.h3,
+    fontWeight: FontWeight.black,
+    color: Colors.primaryBlue,
+    marginBottom: Spacing.xs,
+  },
+  statLabel: {
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textSecondary,
   },
   grid: {
-    padding: 20,
+    paddingHorizontal: Spacing.screenPadding,
   },
   row: {
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: Spacing.md,
   },
   letterCard: {
     width: CARD_WIDTH,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+    ...Shadows.medium,
+  },
+  letterCardGradient: {
+    padding: Spacing.lg,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    minHeight: 160,
+    justifyContent: 'space-between',
   },
   letterCardSelected: {
-    backgroundColor: Colors.primaryBlue,
     transform: [{ scale: 0.95 }],
   },
+  audioIconContainer: {
+    width: 32,
+    height: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: BorderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+  },
+  audioIcon: {
+    fontSize: FontSize.body,
+  },
   letterText: {
-    fontSize: 64,
-    fontWeight: '700',
-    color: Colors.text,
+    fontSize: FontSize.arabicLarge,
+    fontWeight: FontWeight.black,
+    color: Colors.white,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  letterInfo: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    width: '100%',
   },
   letterLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.textLight,
-    marginTop: 8,
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+    marginBottom: Spacing.xs,
   },
+  letterPronunciation: {
+    fontSize: FontSize.bodySmall,
+    fontWeight: FontWeight.semibold,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+});
+
+export default PronunciationScreen;
   letterPronunciation: {
     fontSize: 14,
     color: Colors.textLight,
