@@ -6,34 +6,34 @@ const audioDir = path.join(__dirname, '..', 'assets', 'audio');
 
 // Arabic letters with their pronunciations
 const letters = [
-  { letter: 'ا', name: 'alif', text: 'ألِف' },
-  { letter: 'ب', name: 'baa', text: 'باء' },
-  { letter: 'ت', name: 'taa', text: 'تاء' },
-  { letter: 'ث', name: 'thaa', text: 'ثاء' },
-  { letter: 'ج', name: 'jeem', text: 'جيم' },
-  { letter: 'ح', name: 'haa', text: 'حاء' },
-  { letter: 'خ', name: 'khaa', text: 'خاء' },
-  { letter: 'د', name: 'dal', text: 'دال' },
-  { letter: 'ذ', name: 'thal', text: 'ذال' },
-  { letter: 'ر', name: 'raa', text: 'راء' },
-  { letter: 'ز', name: 'zay', text: 'زاي' },
-  { letter: 'س', name: 'seen', text: 'سين' },
-  { letter: 'ش', name: 'sheen', text: 'شين' },
-  { letter: 'ص', name: 'sad', text: 'صاد' },
-  { letter: 'ض', name: 'dad', text: 'ضاد' },
-  { letter: 'ط', name: 'tah', text: 'طاء' },
-  { letter: 'ظ', name: 'zah', text: 'ظاء' },
-  { letter: 'ع', name: 'ain', text: 'عين' },
-  { letter: 'غ', name: 'ghain', text: 'غين' },
-  { letter: 'ف', name: 'faa', text: 'فاء' },
-  { letter: 'ق', name: 'qaf', text: 'قاف' },
-  { letter: 'ك', name: 'kaf', text: 'كاف' },
-  { letter: 'ل', name: 'lam', text: 'لام' },
-  { letter: 'م', name: 'meem', text: 'ميم' },
-  { letter: 'ن', name: 'noon', text: 'نون' },
-  { letter: 'ه', name: 'haa2', text: 'هاء' },
-  { letter: 'و', name: 'waw', text: 'واو' },
-  { letter: 'ي', name: 'yaa', text: 'ياء' },
+  { letter: 'ا', name: 'alif' },
+  { letter: 'ب', name: 'baa' },
+  { letter: 'ت', name: 'taa' },
+  { letter: 'ث', name: 'thaa' },
+  { letter: 'ج', name: 'jeem' },
+  { letter: 'ح', name: 'haa' },
+  { letter: 'خ', name: 'khaa' },
+  { letter: 'د', name: 'dal' },
+  { letter: 'ذ', name: 'thal' },
+  { letter: 'ر', name: 'raa' },
+  { letter: 'ز', name: 'zay' },
+  { letter: 'س', name: 'seen' },
+  { letter: 'ش', name: 'sheen' },
+  { letter: 'ص', name: 'sad' },
+  { letter: 'ض', name: 'dad' },
+  { letter: 'ط', name: 'tah' },
+  { letter: 'ظ', name: 'zah' },
+  { letter: 'ع', name: 'ain' },
+  { letter: 'غ', name: 'ghain' },
+  { letter: 'ف', name: 'faa' },
+  { letter: 'ق', name: 'qaf' },
+  { letter: 'ك', name: 'kaf' },
+  { letter: 'ل', name: 'lam' },
+  { letter: 'م', name: 'meem' },
+  { letter: 'ن', name: 'noon' },
+  { letter: 'ه', name: 'haa2' },
+  { letter: 'و', name: 'waw' },
+  { letter: 'ي', name: 'yaa' },
 ];
 
 async function downloadAudio(text, filename) {
@@ -66,10 +66,10 @@ async function main() {
   
   for (const letter of letters) {
     const filename = `${letter.name}.mp3`;
-    console.log(`Downloading ${filename} for "${letter.letter}" (${letter.text})...`);
+    console.log(`Downloading ${filename} for "${letter.letter}"...`);
     
     try {
-      await downloadAudio(letter.text, filename);
+      await downloadAudio(letter.letter, filename);
       // Add delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
