@@ -20,7 +20,13 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const clampedProgress = Math.max(0, Math.min(100, progress));
 
   return (
-    <View style={[styles.container, { height, backgroundColor }, style]}>
+    <View 
+      style={[styles.container, { height, backgroundColor }, style]}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: clampedProgress }}
+      accessibilityLabel={`Progress: ${Math.round(clampedProgress)}%`}
+    >
       <View
         style={[
           styles.fill,

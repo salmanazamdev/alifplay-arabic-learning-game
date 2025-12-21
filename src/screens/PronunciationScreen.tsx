@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,7 @@ const PronunciationScreen: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playingAnimation] = useState(new Animated.Value(1));
 
-  const handleLetterPress = async (letter: typeof arabicLetters[0]) => {
+  const handleLetterPress = useCallback(async (letter: typeof arabicLetters[0]) => {
     setSelectedId(letter.id);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
@@ -48,9 +48,9 @@ const PronunciationScreen: React.FC = () => {
     setTimeout(() => {
       setSelectedId(null);
     }, 600);
-  };
+  }, [playingAnimation]);
 
-  const renderLetter = ({ item, index }: { item: typeof arabicLetters[0]; index: number }) => {
+  const renderLetter = useCallback(({ item, index }: { item: typeof arabicLetters[0]; index: number }) => {
     const isSelected = selectedId === item.id;
     
     // Different gradient colors for variety
@@ -72,17 +72,26 @@ const PronunciationScreen: React.FC = () => {
         isSelected={isSelected}
         contentStyle={styles.letterCardContent}
       >
-        <View style={styles.audioIconContainer}>
+        <View 
+          style={styles.audioIconContainer}
+          accessible={false}
+        >
           <Text style={styles.audioIcon}>🔊</Text>
         </View>
-        <Text style={styles.letterText}>{item.letter}</Text>
+        <Text 
+          style={styles.letterText}
+          accessible={true}
+          accessibilityLabel={`Arabic letter ${item.name}, pronounced ${item.pronunciation}`}
+        >
+          {item.letter}
+        </Text>
         <View style={styles.letterInfo}>
           <Text style={styles.letterLabel}>{item.name}</Text>
           <Text style={styles.letterPronunciation}>"{item.pronunciation}"</Text>
         </View>
       </GradientCard>
     );
-  };
+  }, [selectedId, handleLetterPress]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -111,6 +120,11 @@ const PronunciationScreen: React.FC = () => {
         ]}
         columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={10}
+        windowSize={5}
       />
     </View>
   );

@@ -18,7 +18,11 @@ const StatBadge: React.FC<StatBadgeProps> = ({
   style,
 }) => {
   return (
-    <View style={[styles.container, { backgroundColor }, style]}>
+    <View 
+      style={[styles.container, { backgroundColor }, style]}
+      accessible={true}
+      accessibilityLabel={`${value} ${label}`}
+    >
       <Text style={[styles.value, { color }]}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -30,12 +30,7 @@ const ImageMatchScreen: React.FC = () => {
     setShuffledImages([...imageMatchData].sort(() => Math.random() - 0.5));
   }, []);
 
-  useEffect(() => {
-    // Shuffle images on mount
-    setShuffledImages([...imageMatchData].sort(() => Math.random() - 0.5));
-  }, []);
-
-  const handleWordPress = async (id: string) => {
+  const handleWordPress = useCallback(async (id: string) => {
     if (matches.includes(id)) return;
     
     setSelectedWord(id);
@@ -44,9 +39,9 @@ const ImageMatchScreen: React.FC = () => {
     if (selectedImage) {
       await checkMatch(id, selectedImage);
     }
-  };
+  }, [matches, selectedImage, checkMatch]);
 
-  const handleImagePress = async (id: string) => {
+  const handleImagePress = useCallback(async (id: string) => {
     if (matches.includes(id)) return;
     
     setSelectedImage(id);
@@ -55,9 +50,9 @@ const ImageMatchScreen: React.FC = () => {
     if (selectedWord) {
       await checkMatch(selectedWord, id);
     }
-  };
+  }, [matches, selectedWord, checkMatch]);
 
-  const checkMatch = async (wordId: string, imageId: string) => {
+  const checkMatch = useCallback(async (wordId: string, imageId: string) => {
     // Animate
     Animated.sequence([
       Animated.timing(scaleAnim, {
@@ -96,7 +91,7 @@ const ImageMatchScreen: React.FC = () => {
     
     setSelectedWord(null);
     setSelectedImage(null);
-  };
+  }, [matches, score, scaleAnim]);
 
   const resetGame = () => {
     setScore(0);

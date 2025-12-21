@@ -52,6 +52,10 @@ const GradientButton: React.FC<GradientButtonProps> = ({
       onPress={handlePress}
       disabled={disabled}
       activeOpacity={0.8}
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={text}
+      accessibilityState={{ disabled }}
     >
       <LinearGradient
         colors={disabled ? [Colors.borderLight, Colors.borderLight] : getGradientColors()}

@@ -37,6 +37,9 @@ const GradientCard: React.FC<GradientCardProps> = ({
         onPress: handlePress,
         disabled,
         activeOpacity: 0.8,
+        accessible: true,
+        accessibilityRole: 'button' as const,
+        accessibilityState: { disabled, selected: isSelected },
       }
     : {};
 
