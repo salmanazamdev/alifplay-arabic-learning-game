@@ -173,9 +173,6 @@ const ImageMatchScreen: React.FC = () => {
   const totalMatches = (currentLevel - 1) * ITEMS_PER_LEVEL + levelMatches.length;
   const overallProgress = (totalMatches / imageMatchData.length) * 100;
 
-  const totalMatches = (currentLevel - 1) * ITEMS_PER_LEVEL + levelMatches.length;
-  const overallProgress = (totalMatches / imageMatchData.length) * 100;
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
