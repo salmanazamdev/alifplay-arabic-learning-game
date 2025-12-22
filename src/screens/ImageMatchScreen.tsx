@@ -32,6 +32,7 @@ const ImageMatchScreen: React.FC = () => {
   // Game state
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [wrongMatch, setWrongMatch] = useState<boolean>(false);
   const [shuffledImages, setShuffledImages] = useState(imageMatchData);
   const [showLevelComplete, setShowLevelComplete] = useState(false);
   const [levelStars, setLevelStars] = useState(0);
@@ -88,26 +89,19 @@ const ImageMatchScreen: React.FC = () => {
   }, [levelMatches, selectedWord]);
 
   const checkMatch = useCallback(async (wordId: string, imageId: string) => {
-    // Animate
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
     if (wordId === imageId) {
-      // Correct match!
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
+      // Correct match! Immediately show success
       const newMatches = [...levelMatches, wordId];
       setLevelMatches(newMatches);
       setTotalScore(totalScore + 10);
+      
+      // Clear selections immediately so cards turn green
+      setSelectedWord(null);
+      setSelectedImage(null);
+      setWrongMatch(false);
+      
+      // Haptic feedback
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
       // Check if level complete
       if (newMatches.length === currentLevelItems.length) {
@@ -116,14 +110,19 @@ const ImageMatchScreen: React.FC = () => {
         }, 500);
       }
     } else {
-      // Wrong match
+      // Wrong match - show red feedback longer
+      setWrongMatch(true);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setMistakes(mistakes + 1);
+      
+      // Keep red state visible for 800ms
+      setTimeout(() => {
+        setSelectedWord(null);
+        setSelectedImage(null);
+        setWrongMatch(false);
+      }, 800);
     }
-    
-    setSelectedWord(null);
-    setSelectedImage(null);
-  }, [levelMatches, totalScore, mistakes, currentLevelItems, scaleAnim]);
+  }, [levelMatches, totalScore, mistakes, currentLevelItems]);
 
   const completLevel = async () => {
     // Calculate stars (3 = perfect, 2 = 1-2 mistakes, 1 = 3+ mistakes)
@@ -218,7 +217,9 @@ const ImageMatchScreen: React.FC = () => {
               activeOpacity={0.7}
             >
               <LinearGradient
-                colors={
+                colorswrongMatch && selectedWord === item.id
+                    ? ['#ffcccc', '#ff6b6b']
+                    : ={
                   levelMatches.includes(item.id)
                     ? [Colors.successLight, Colors.success]
                     : selectedWord === item.id
@@ -262,7 +263,9 @@ const ImageMatchScreen: React.FC = () => {
             >
               <LinearGradient
                 colors={
-                  levelMatches.includes(item.id)
+                  levewrongMatch && selectedImage === item.id
+                    ? ['#ffcccc', '#ff6b6b']
+                    : lMatches.includes(item.id)
                     ? [Colors.successLight, Colors.success]
                     : selectedImage === item.id
                     ? [Colors.primaryPinkLight, Colors.primaryPink]
