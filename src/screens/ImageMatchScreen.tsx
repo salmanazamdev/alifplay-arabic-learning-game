@@ -14,7 +14,6 @@ import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { ProgressBar, GradientButton } from '../components';
 import { imageMatchData } from '../utils/gameData';
-import { playSound } from '../utils/audio';
 import { addStar } from '../utils/storage';
 
 const ITEMS_PER_LEVEL = 3;
@@ -105,7 +104,6 @@ const ImageMatchScreen: React.FC = () => {
     if (wordId === imageId) {
       // Correct match!
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await playSound('success.mp3');
       
       const newMatches = [...levelMatches, wordId];
       setLevelMatches(newMatches);
