@@ -125,7 +125,7 @@
     }
     .button-grid { 
       display: grid; 
-      grid-template-columns: repeat(2, 1fr); 
+      grid-template-columns: repeat(3, 1fr); 
       gap: 8px; 
       margin-bottom: 10px; 
     }
@@ -185,6 +185,9 @@
       border: 2px solid #e0e0e0;
       border-radius: 12px;
       overflow: hidden;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
     #guideCanvas {
       position: absolute;
@@ -199,6 +202,7 @@
       left: 0;
       z-index: 2;
       touch-action: none;
+      cursor: crosshair;
     }
     #completedContainer { 
       display: flex; 
@@ -241,8 +245,7 @@
 </head>
 <body>
   <div class="header">
-    <h3>تتبع الحروف العربية</h3>
-    <p>تArabic Letter Tracing</h3>
+    <h3>Arabic Letter Tracing</h3>
     <p>Practice tracing Arabic letters with your finger</p>
   </div>
 
@@ -288,17 +291,8 @@
 
       <div class="button-grid">
         <button class="action-btn" id="practiceBtn">Start Practice</button>
-        <button class="action-btn" id="clearBtn">Clear</button>
-        <button class="action-btn" id="resetBtn">Reset</button>
-        <button class="action-btn" id="startAgainBtn">Start Again</button>
-      </div>
-      <div class="toggle-grid">
-        <button class="toggle-btn active" id="guideBtn">Hide Guide</button>
-        <button class="toggle-btn active" id="letterBtn">Hide Letter</button>
-      </div>
-
-      <div style="margin-top: 12px;">
-        <button class="action-btn" id="playSoundBtn" style="width: 100%;">🔊 Play Sound</button>
+        <button class="action-btn" id="clearBtn">Clear Drawing</button>
+        <button class="action-btn" id="playSoundBtn">🔊 Play Sound</button>
       </div>
     </div>
 
@@ -313,7 +307,10 @@
     <div class="card">
       <h4 style="margin-bottom: 12px; font-size: 18px;">Completed Letters</h4>
       <div id="completedContainer">
-        <div class="empty-state">No letters completed yet
+        <div class="empty-state">No letters completed yet</div>
+      </div>
+    </div>
+  </div>
     </div>
   </div>
 
@@ -324,7 +321,7 @@
     let size = 250;
     let showGuide = true;
     let showLetter = true;
-    let isPracticing = false;
+    let isPracticing = true; // Start in practice mode by default
     let completedLetters = new Set();
     
     let guideCanvas = null;
@@ -340,14 +337,16 @@
     const feedbackArea = document.getElementById("feedbackArea");
 
     function sendToRN(msg) {
+      console.log("Sending to RN:", msg);
       if (window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage(msg);
       } else {
-        console.log("RNBridge:", msg);
+        console.log("ReactNativeWebView not available");
       }
     }
 
     function showFeedback(message, type) {
+      console.log("Feedback:", message, type);
       feedbackArea.innerHTML = `<div class="feedback ${type}">${message}</div>`;
       setTimeout(() => {
         feedbackArea.innerHTML = "";
@@ -355,9 +354,15 @@
     }
 
     function initCanvas() {
+      console.log("Initializing canvas, size:", size);
       const container = document.getElementById("canvasContainer");
       guideCanvas = document.getElementById("guideCanvas");
       drawCanvas = document.getElementById("drawCanvas");
+      
+      if (!guideCanvas || !drawCanvas) {
+        console.error("Canvas elements not found!");
+        return;
+      }
       
       guideCanvas.width = size;
       guideCanvas.height = size;
@@ -367,6 +372,12 @@
       guideCtx = guideCanvas.getContext("2d");
       drawCtx = drawCanvas.getContext("2d");
       
+      if (!guideCtx || !drawCtx) {
+        console.error("Could not get canvas contexts!");
+        return;
+      }
+      
+      console.log("Canvas initialized successfully");
       drawGuide();
       clearDrawing();
     }
@@ -413,18 +424,26 @@
     function getTouchPos(e) {
       const rect = drawCanvas.getBoundingClientRect();
       const touch = e.touches ? e.touches[0] : e;
+      const scaleX = drawCanvas.width / rect.width;
+      const scaleY = drawCanvas.height / rect.height;
       return {
-        x: (touch.clientX - rect.left) * (size / rect.width),
-        y: (touch.clientY - rect.top) * (size / rect.height)
+        x: (touch.clientX - rect.left) * scaleX,
+        y: (touch.clientY - rect.top) * scaleY
       };
     }
 
     function startDrawing(e) {
+      console.log("Start drawing");
       e.preventDefault();
-      if (!isPracticing) return;
+      e.stopPropagation();
+      if (!isPracticing) {
+        console.log("Not in practice mode");
+        return;
+      }
       
       isDrawing = true;
       const pos = getTouchPos(e);
+      console.log("Touch position:", pos);
       lastX = pos.x;
       lastY = pos.y;
       strokes.push([{x: pos.x, y: pos.y}]);
@@ -432,12 +451,13 @@
 
     function draw(e) {
       e.preventDefault();
+      e.stopPropagation();
       if (!isDrawing || !isPracticing) return;
       
       const pos = getTouchPos(e);
       
       drawCtx.strokeStyle = "#000";
-      drawCtx.lineWidth = size * 0.04;
+      drawCtx.lineWidth = size * 0.05;
       drawCtx.lineCap = "round";
       drawCtx.lineJoin = "round";
       
@@ -455,6 +475,7 @@
     function stopDrawing(e) {
       if (!isDrawing) return;
       e.preventDefault();
+      e.stopPropagation();
       isDrawing = false;
     }
 
@@ -508,17 +529,14 @@
     function togglePractice(forceState = null) {
       const btn = document.getElementById("practiceBtn");
       if (forceState === null) {
-        isPracticing = !isPracticing;
-      } else {
-        isPracticing = forceState;
-      }
-      
-      btn.textContent = isPracticing ? "Check Answer" : "Start Practice";
+        isPracticing = !isPracticing;Drawing" : "Start Practice";
       btn.classList.toggle("active", isPracticing);
       
       if (isPracticing) {
+        // Entering practice mode - clear and ready to draw
         clearDrawing();
       } else if (strokes.length > 0) {
+        // Exiting practice mode - validate what was drawn
         validateDrawing();
       }
     }
@@ -527,7 +545,9 @@
     document.getElementById("loadBtn").onclick = () => {
       currentLetter = document.getElementById("letterSelect").value;
       initCanvas();
-      togglePractice(false);
+      isPracticing = true;
+      document.getElementById("practiceBtn").textContent = "Check Drawing";
+      document.getElementById("practiceBtn").classList.add("active");
     };
 
     document.getElementById("practiceBtn").onclick = () => togglePractice();
@@ -536,45 +556,14 @@
       clearDrawing();
     };
 
-    document.getElementById("resetBtn").onclick = () => {
-      size = 250;
-      document.getElementById("sizeSlider").value = size;
-      document.getElementById("sizeLabel").textContent = size;
-      togglePractice(false);
-      initCanvas();
-    };
-
-    document.getElementById("guideBtn").onclick = () => {
-      showGuide = !showGuide;
-      const btn = document.getElementById("guideBtn");
-      btn.textContent = showGuide ? "Hide Guide" : "Show Guide";
-      btn.classList.toggle("active", showGuide);
-      btn.classList.toggle("inactive", !showGuide);
-      drawGuide();
-    };
-
-    document.getElementById("letterBtn").onclick = () => {
-      showLetter = !showLetter;
-      const btn = document.getElementById("letterBtn");
-      btn.textContent = showLetter ? "Hide Letter" : "Show Letter";
-      btn.classList.toggle("active", showLetter);
-      btn.classList.toggle("inactive", !showLetter);
-      drawGuide();
-    };
-
     document.getElementById("sizeSlider").addEventListener("input", (e) => {
       size = parseInt(e.target.value, 10);
       document.getElementById("sizeLabel").textContent = size;
       initCanvas();
-      togglePractice(false);
-    });
-
-    document.getElementById("startAgainBtn").onclick = () => {
-      completedLetters.clear();
-      completedContainer.innerHTML = '<div class="empty-state">No letters completed yet</div>';
-      size = 250;
-      document.getElementById("sizeSlider").value = size;
-      document.getElementById("sizeLabel").textContent = size;
+      isPracticing = true;
+      document.getElementById("practiceBtn").textContent = "Check Drawing";
+      document.getElementById("practiceBtn").classList.add("active");
+    }) document.getElementById("sizeLabel").textContent = size;
       togglePractice(false);
       currentLetter = "ا";
       document.getElementById("letterSelect").value = currentLetter;
@@ -589,17 +578,48 @@
     drawCanvas.addEventListener("touchstart", startDrawing, { passive: false });
     drawCanvas.addEventListener("touchmove", draw, { passive: false });
     drawCanvas.addEventListener("touchend", stopDrawing, { passive: false });
+    drawCanvas.addEventListener("touchcancel", stopDrawing, { passive: false });
     
     // Mouse events for desktop testing
-    drawCanvas.addEventListener("mousedown", startDrawing);
-    drawCanvas.addEventListener("mousemove", draw);
+    drawCanvas.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      startDrawing(e);
+    });
+    drawCanvas.addEventListener("mousemove", (e) => {
+      if (isDrawing) {
+        e.preventDefault();
+        draw(e);
+      }
+    });
+    drawCanvas.addEventListener("mouseup", stopDrawing);
+    drawCanvas.addEventListener("mouseleave", stopDrawing);
+
+    // Initialize on load
+    window.addEventListener("load", () => {
+      console.log("Page loaded, initializing...");
+      initCanvas();
+      // Set initial button state
+      const practiceBtn = document.getElementById("practiceBtn");
+      if (practiceBtn) {
+        practiceBtn.textContent = "Check Drawing";
+        practiceBtn.classList.add("active");
+        console.log("Practice button initialized");
+      }
+    });
+    
+    console.log("Script loaded");
+  </script>
+</body>
+</html>
+        draw(e);
+      }
+    });
     drawCanvas.addEventListener("mouseup", stopDrawing);
     drawCanvas.addEventListener("mouseleave", stopDrawing);
 
     // Initialize on load
     window.addEventListener("load", () => {
       initCanvas();
-    });
-  </script>
-</body>
-</html>
+      // Set initial button state
+      document.getElementById("practiceBtn").textContent = "Check Drawing";
+      document.getElementById("practiceBtn").classList.add("active"

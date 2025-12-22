@@ -22,12 +22,9 @@ const TracingScreen: React.FC = () => {
 
   // Check internet connectivity
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      setIsConnected(state.isConnected);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
+    // Skip connectivity check - HTML works offline from assets
+    setIsConnected(true);
+    setIsLoading(false);
   }, []);
 
   const audioMap: Record<string, any> = {
@@ -85,10 +82,20 @@ const TracingScreen: React.FC = () => {
 
   const onMessage = (event: WebViewMessageEvent) => {
     const data = event.nativeEvent.data;
+    console.log('WebView message received:', data);
     if (data.startsWith('PLAY_AUDIO:')) {
       const char = data.replace('PLAY_AUDIO:', '');
       playArabicSound(char);
     }
+  };
+
+  const onError = (syntheticEvent: any) => {
+    const { nativeEvent } = syntheticEvent;
+    console.error('WebView error:', nativeEvent);
+  };
+
+  const onLoadEnd = () => {
+    console.log('WebView loaded successfully');
   };
 
   const checkConnection = async () => {
@@ -138,9 +145,11 @@ const TracingScreen: React.FC = () => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
-      <WebView
-        ref={webviewRef}
-        originWhitelist={['*']}
+      <WebViewfalse}
+        onMessage={onMessage}
+        onError={onError}
+        onLoadEnd={onLoadEnd}
+        style={{ flex: 1, backgroundColor: Colors.background{['*']}
         source={require('../../assets/arabic/arabic-tracing.html')}
         javaScriptEnabled={true}
         domStorageEnabled={true}
