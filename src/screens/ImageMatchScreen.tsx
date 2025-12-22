@@ -217,11 +217,11 @@ const ImageMatchScreen: React.FC = () => {
               activeOpacity={0.7}
             >
               <LinearGradient
-                colorswrongMatch && selectedWord === item.id
-                    ? ['#ffcccc', '#ff6b6b']
-                    : ={
+                colors={
                   levelMatches.includes(item.id)
                     ? [Colors.successLight, Colors.success]
+                    : wrongMatch && selectedWord === item.id
+                    ? ['#ffcccc', '#ff6b6b']
                     : selectedWord === item.id
                     ? [Colors.primaryBlueLight, Colors.primaryBlue]
                     : [Colors.white, Colors.white]
@@ -263,10 +263,10 @@ const ImageMatchScreen: React.FC = () => {
             >
               <LinearGradient
                 colors={
-                  levewrongMatch && selectedImage === item.id
-                    ? ['#ffcccc', '#ff6b6b']
-                    : lMatches.includes(item.id)
+                  levelMatches.includes(item.id)
                     ? [Colors.successLight, Colors.success]
+                    : wrongMatch && selectedImage === item.id
+                    ? ['#ffcccc', '#ff6b6b']
                     : selectedImage === item.id
                     ? [Colors.primaryPinkLight, Colors.primaryPink]
                     : [Colors.white, Colors.white]
