@@ -431,7 +431,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.md,
-    gap: Spacing.md,
+    gap: Spacing.lg,
+    alignItems: 'flex-start',
   },
   column: {
     flex: 1,
@@ -449,7 +450,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   card: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
     ...Shadows.small,
@@ -458,7 +459,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 100,
+    height: 110,
     position: 'relative',
   },
   selectedCard: {
