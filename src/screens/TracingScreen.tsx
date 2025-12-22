@@ -7,6 +7,9 @@ import {
   Dimensions,
   StatusBar,
   Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -33,14 +36,11 @@ const TracingScreen: React.FC = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [paths, setPaths] = useState<PathData[]>([]);
   const [currentPath, setCurrentPath] = useState<string>('');
-  const [strokeCount, setStrokeCount] = useState(0);
-  const [feedback, setFeedback] = useState<'none' | 'good' | 'try-again'>('none');
   const currentLetter = arabicLetters[currentIndex];
 
   const onTouchStart = (event: any) => {
     const { locationX, locationY } = event.nativeEvent;
     setCurrentPath(`M${locationX},${locationY}`);
-    setFeedback('none');
   };
 
   const onTouchMove = (event: any) => {
@@ -50,18 +50,9 @@ const TracingScreen: React.FC = () => {
 
   const onTouchEnd = () => {
     if (currentPath) {
-      const pathLength = currentPath.split(' ').length;
-      // Simple validation: check if user drew enough (at least 10 points)
-      if (pathLength < 10) {
-        setFeedback('try-again');
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      } else {
-        setPaths([...paths, { path: currentPath, color: Colors.primaryGreen }]);
-        setStrokeCount(prev => prev + 1);
-        setFeedback('good');
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
+      setPaths([...paths, { path: currentPath, color: Colors.primaryGreen }]);
       setCurrentPath('');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
 
@@ -69,29 +60,16 @@ const TracingScreen: React.FC = () => {
     setPaths([]);
     setCurrentPath('');
     setIsComplete(false);
-    setStrokeCount(0);
-    setFeedback('none');
   };
 
   const handleComplete = async () => {
-    // Validation: Must have at least 1 stroke
-    if (strokeCount === 0) {
-      Alert.alert('Draw the Letter!', 'Please trace the letter before completing.');
-      setFeedback('try-again');
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-    
-    // Check if drawing is reasonable (at least covers some area)
-    if (paths.length === 0) {
-      Alert.alert('Try Again!', 'Your tracing seems incomplete. Draw over the letter carefully.');
-      setFeedback('try-again');
+    if (paths.length === 0 && !currentPath) {
+      Alert.alert('Draw Something!', 'Please draw on the canvas before completing.');
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
 
     setIsComplete(true);
-    setFeedback('good');
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await playSound('success.mp3');
     await addStar(2);
@@ -103,8 +81,6 @@ const TracingScreen: React.FC = () => {
       setIsComplete(false);
       setPaths([]);
       setCurrentPath('');
-      setStrokeCount(0);
-      setFeedback('none');
     } else {
       Alert.alert(
         'Completed! 🎉',
@@ -113,8 +89,6 @@ const TracingScreen: React.FC = () => {
           setCurrentIndex(0);
           setIsComplete(false);
           setPaths([]);
-          setStrokeCount(0);
-          setFeedback('none');
         }}]
       );
     }
@@ -123,15 +97,19 @@ const TracingScreen: React.FC = () => {
   const progress = ((currentIndex + 1) / arabicLetters.length) * 100;
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" />
-        
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + Spacing.xl }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.title}>✍️ Letter Tracing</Text>
-            <Text style={styles.subtitle}>Draw over the letter carefully</Text>
+            <Text style={styles.subtitle}>Draw the letter with your finger</Text>
           </View>
           <View style={styles.progressBadge}>
             <Text style={styles.progressText}>
@@ -145,41 +123,28 @@ const TracingScreen: React.FC = () => {
           <ProgressBar progress={progress} color={Colors.primaryGreen} />
         </View>
 
-        {/* Instruction Card */}
-        <View style={styles.instructionCard}>
-          <View style={styles.letterDisplayRow}>
-            <View style={styles.letterBox}>
-              <Text style={styles.arabicLetterLarge}>{currentLetter.letter}</Text>
+        {/* Letter Card */}
+        <View style={styles.letterCard}>
+          <View style={styles.letterRow}>
+            <View style={styles.letterCircle}>
+              <Text style={styles.arabicLetterDisplay}>{currentLetter.letter}</Text>
             </View>
-            <View style={styles.letterInfoBox}>
+            <View style={styles.letterDetails}>
               <Text style={styles.letterName}>{currentLetter.name}</Text>
               <Text style={styles.pronunciation}>"{currentLetter.pronunciation}"</Text>
               <TouchableOpacity
-                style={styles.playButton}
+                style={styles.audioButton}
                 onPress={() => playSound(currentLetter.audioFile)}
               >
-                <Text style={styles.playButtonText}>🔊 Play Sound</Text>
+                <Text style={styles.audioButtonText}>🔊 Listen</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        {/* Feedback Messages */}
-        {feedback === 'good' && (
-          <View style={styles.feedbackGood}>
-            <Text style={styles.feedbackText}>✓ Good stroke!</Text>
-          </View>
-        )}
-        {feedback === 'try-again' && (
-          <View style={styles.feedbackBad}>
-            <Text style={styles.feedbackText}>✗ Draw slower and longer</Text>
-          </View>
-        )}
-
-        {/* Drawing Canvas */}
-        <View style={styles.canvasContainer}>
+        {/* Canvas */}
+        <View style={styles.canvasSection}>
           <View style={styles.canvasWrapper}>
-            {/* Background guide letter */}
             <View style={styles.guideLetterContainer}>
               <Text style={styles.guideLetter}>{currentLetter.letter}</Text>
             </View>
@@ -191,25 +156,23 @@ const TracingScreen: React.FC = () => {
               onTouchEnd={onTouchEnd}
             >
               <Svg height={CANVAS_SIZE} width={CANVAS_SIZE}>
-                {/* Render completed paths */}
                 {paths.map((pathData, index) => (
                   <Path
                     key={index}
                     d={pathData.path}
                     stroke={pathData.color}
-                    strokeWidth={12}
+                    strokeWidth={14}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     fill="none"
                   />
                 ))}
                 
-                {/* Render current drawing path */}
                 {currentPath && (
                   <Path
                     d={currentPath}
                     stroke={Colors.primaryPink}
-                    strokeWidth={12}
+                    strokeWidth={14}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     fill="none"
@@ -219,82 +182,81 @@ const TracingScreen: React.FC = () => {
               </Svg>
             </View>
             
-            {strokeCount === 0 && !currentPath && (
+            {paths.length === 0 && !currentPath && (
               <View style={styles.canvasHint}>
-                <Text style={styles.canvasHintIcon}>👆</Text>
-                <Text style={styles.canvasHintText}>Draw here with your finger</Text>
-              </View>
-            )}
-            
-            {/* Stroke counter */}
-            {strokeCount > 0 && (
-              <View style={styles.strokeCounter}>
-                <Text style={styles.strokeCountText}>{strokeCount} stroke{strokeCount !== 1 ? 's' : ''}</Text>
+                <Text style={styles.hintEmoji}>👇</Text>
+                <Text style={styles.hintText}>Draw here</Text>
               </View>
             )}
           </View>
         </View>
 
-        {/* Success Message */}
+        {/* Success */}
         {isComplete && (
-          <View style={styles.successMessage}>
+          <View style={styles.successCard}>
             <Text style={styles.successEmoji}>🎉</Text>
-            <Text style={styles.successText}>Perfect! Well done!</Text>
+            <Text style={styles.successText}>Great Job!</Text>
           </View>
         )}
 
-        {/* Action Buttons */}
-        <View style={[styles.buttons, { paddingBottom: insets.bottom + Spacing.md }]}>
+        {/* Buttons */}
+        <View style={styles.buttonRow}>
           <TouchableOpacity
-            style={[styles.button, styles.clearButton, (strokeCount === 0 && !currentPath) && styles.buttonDisabled]}
+            style={[styles.clearBtn, (paths.length === 0 && !currentPath) && styles.btnDisabled]}
             onPress={handleClear}
-            disabled={strokeCount === 0 && !currentPath}
+            disabled={paths.length === 0 && !currentPath}
           >
-            <Text style={styles.clearButtonText}>🗑️ Clear</Text>
+            <Text style={styles.clearBtnText}>🗑️ Clear</Text>
           </TouchableOpacity>
           
           {!isComplete ? (
             <TouchableOpacity
-              style={[styles.button, styles.completeButton]}
+              style={styles.doneBtn}
               onPress={handleComplete}
             >
               <LinearGradient
                 colors={[Colors.primaryGreen, Colors.primaryGreenDark]}
-                style={styles.buttonGradient}
+                style={styles.btnGradient}
               >
-                <Text style={styles.buttonText}>✓ Done</Text>
+                <Text style={styles.btnText}>✓ Done</Text>
               </LinearGradient>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={[styles.button, styles.nextButton]}
+              style={styles.nextBtn}
               onPress={handleNext}
             >
               <LinearGradient
                 colors={[Colors.primaryBlue, Colors.primaryBlueDark]}
-                style={styles.buttonGradient}
+                style={styles.btnGradient}
               >
-                <Text style={styles.buttonText}>Next →</Text>
+                <Text style={styles.btnText}>Next →</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}
         </View>
-      </View>
-    </GestureHandlerRootView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundLight,
+    backgroundColor: Colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.screenPadding,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.lg,
   },
   headerLeft: {
     flex: 1,
@@ -302,20 +264,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.h2,
     fontWeight: FontWeight.bold,
-    fontFamily: 'Cairo_700Bold',
     color: Colors.text,
   },
   subtitle: {
     fontSize: FontSize.bodySmall,
     color: Colors.textSecondary,
-    marginTop: Spacing.xs,
+    marginTop: 4,
   },
   progressBadge: {
     backgroundColor: Colors.primaryGreen,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    ...Shadows.small,
   },
   progressText: {
     fontSize: FontSize.body,
@@ -326,98 +286,70 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenPadding,
     marginBottom: Spacing.md,
   },
-  instructionCard: {
+  letterCard: {
     marginHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     ...Shadows.medium,
   },
-  letterDisplayRow: {
+  letterRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
   },
-  letterBox: {
-    width: 100,
-    height: 100,
+  letterCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: Colors.primaryOrangeLight,
-    borderRadius: BorderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    ...Shadows.small,
   },
-  arabicLetterLarge: {
-    fontSize: 64,
+  arabicLetterDisplay: {
+    fontSize: 48,
     fontFamily: 'Cairo_700Bold',
     color: Colors.primaryOrangeDark,
   },
-  letterInfoBox: {
+  letterDetails: {
     flex: 1,
   },
   letterName: {
     fontSize: FontSize.h3,
     fontWeight: FontWeight.bold,
-    fontFamily: 'Cairo_600SemiBold',
     color: Colors.text,
-    marginBottom: Spacing.xs,
+    marginBottom: 4,
   },
   pronunciation: {
     fontSize: FontSize.body,
     color: Colors.textSecondary,
     marginBottom: Spacing.sm,
   },
-  playButton: {
+  audioButton: {
     backgroundColor: Colors.primaryBlue,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
     alignSelf: 'flex-start',
   },
-  playButtonText: {
+  audioButtonText: {
     fontSize: FontSize.bodySmall,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.bold,
     color: Colors.white,
   },
-  feedbackGood: {
-    marginHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.successLight,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.success,
-  },
-  feedbackBad: {
-    marginHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.errorLight,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.error,
-  },
-  feedbackText: {
-    fontSize: FontSize.body,
-    fontWeight: FontWeight.semibold,
-    color: Colors.text,
-  },
-  canvasContainer: {
-    flex: 1,
+  canvasSection: {
     paddingHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.md,
-    minHeight: 300,
+    marginBottom: Spacing.lg,
   },
   canvasWrapper: {
-    flex: 1,
+    height: CANVAS_SIZE + 40,
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.xl,
     ...Shadows.large,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: Colors.primaryGreenLight,
   },
   guideLetterContainer: {
@@ -429,10 +361,10 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   guideLetter: {
-    fontSize: 220,
+    fontSize: 180,
     fontFamily: 'Cairo_700Bold',
     color: Colors.borderLight,
-    opacity: 0.25,
+    opacity: 0.3,
   },
   canvas: {
     width: CANVAS_SIZE,
@@ -443,38 +375,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     pointerEvents: 'none',
   },
-  canvasHintIcon: {
-    fontSize: 48,
-    marginBottom: Spacing.sm,
+  hintEmoji: {
+    fontSize: 40,
+    marginBottom: 8,
   },
-  canvasHintText: {
+  hintText: {
     fontSize: FontSize.body,
     fontWeight: FontWeight.semibold,
     color: Colors.textLight,
   },
-  strokeCounter: {
-    position: 'absolute',
-    top: Spacing.md,
-    right: Spacing.md,
-    backgroundColor: Colors.primaryPurple,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    ...Shadows.small,
-  },
-  strokeCountText: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  },
-  successMessage: {
+  successCard: {
     marginHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     backgroundColor: Colors.primaryGreen,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     alignItems: 'center',
-    ...Shadows.large,
   },
   successEmoji: {
     fontSize: 48,
@@ -482,47 +398,49 @@ const styles = StyleSheet.create({
   successText: {
     fontSize: FontSize.h2,
     fontWeight: FontWeight.bold,
-    fontFamily: 'Cairo_700Bold',
     color: Colors.white,
-    marginTop: Spacing.sm,
+    marginTop: 8,
   },
-  buttons: {
+  buttonRow: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.screenPadding,
     gap: Spacing.md,
+    marginBottom: Spacing.lg,
   },
-  button: {
+  clearBtn: {
     flex: 1,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    minHeight: 56,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  clearButton: {
     backgroundColor: Colors.borderLight,
-    justifyContent: 'center',
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  clearButtonText: {
+  clearBtnText: {
     fontSize: FontSize.body,
     fontWeight: FontWeight.bold,
     color: Colors.textSecondary,
   },
-  completeButton: {
+  btnDisabled: {
+    opacity: 0.5,
+  },
+  doneBtn: {
+    flex: 2,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
     ...Shadows.medium,
   },
-  nextButton: {
+  nextBtn: {
+    flex: 2,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
     ...Shadows.medium,
   },
-  buttonGradient: {
-    flex: 1,
-    justifyContent: 'center',
+  btnGradient: {
+    paddingVertical: Spacing.lg,
     alignItems: 'center',
-    paddingVertical: Spacing.md,
+    justifyContent: 'center',
   },
-  buttonText: {
+  btnText: {
     fontSize: FontSize.body,
     fontWeight: FontWeight.bold,
     color: Colors.white,
