@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
+  Modal,
   Animated,
   StatusBar,
 } from 'react-native';
@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
-import { ProgressBar, GradientButton } from '../components';
+import { ProgressBar } from '../components';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
 import { addStar } from '../utils/storage';
@@ -30,25 +30,12 @@ const QuizScreen: React.FC = () => {
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [quizData] = useState(() => generateQuizQuestions(arabicLetters, 10));
-  const [scaleAnim] = useState(new Animated.Value(1));
+  const [showComplete, setShowComplete] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
+  const [quizStars, setQuizStars] = useState(0);
+  const [modalAnim] = useState(new Animated.Value(0));
 
   const current = quizData[currentQuestion];
-
-  // Play audio when question changes
-  useEffect(() => {
-    const playQuestionAudio = async () => {
-      if (current?.audioFile) {
-        await playSound(current.audioFile);
-      }
-    };
-    playQuestionAudio();
-    
-    // Reset animations
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-  }, [currentQuestion]);
 
   const handleAnswer = async (answer: string) => {
     if (answered) return;
@@ -57,24 +44,9 @@ const QuizScreen: React.FC = () => {
     setSelectedOption(answer);
     const isCorrect = answer === current.correct;
 
-    // Animate button press
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
     if (isCorrect) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await playSound('success.mp3');
       setScore(score + 1);
-      await addStar(2);
     } else {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
@@ -85,20 +57,41 @@ const QuizScreen: React.FC = () => {
         setAnswered(false);
         setSelectedOption(null);
       } else {
-        const finalScore = score + (isCorrect ? 1 : 0);
-        const percentage = calculateQuizScore(finalScore, quizData.length);
+        // Quiz complete
+        const final = score + (isCorrect ? 1 : 0);
+        const percentage = calculateQuizScore(final, quizData.length);
         const stars = getStarsForScore(percentage);
-        const message = getScoreMessage(percentage);
         
-        Alert.alert(
-          'Quiz Complete! 🎉',
-          `${message}\n\nScore: ${finalScore}/${quizData.length} (${percentage}%)\nStars Earned: ${'⭐'.repeat(stars)}`
-        );
+        setFinalScore(final);
+        setQuizStars(stars);
+        setShowComplete(true);
+        
+        addStar(stars);
+        
+        Animated.spring(modalAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+        }).start();
       }
-    }, 1500);
+    }, 1200);
+  };
+
+  const handleRestart = () => {
+    Animated.timing(modalAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowComplete(false);
+      setCurrentQuestion(0);
+      setScore(0);
+      setAnswered(false);
+      setSelectedOption(null);
+    });
   };
 
   const progress = ((currentQuestion + 1) / quizData.length) * 100;
+  const percentage = calculateQuizScore(finalScore, quizData.length);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -106,19 +99,21 @@ const QuizScreen: React.FC = () => {
       
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.title}>🎯 Quiz Time!</Text>
-          <Text style={styles.subtitle}>Test your knowledge!</Text>
-        </View>
-        <View style={styles.scoreContainer}>
-          <Text style={styles.scoreLabel}>Score</Text>
-          <Text style={styles.scoreValue}>{score}</Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.title}>Letter Quiz</Text>
+            <Text style={styles.subtitle}>Test your knowledge</Text>
+          </View>
+          <View style={styles.scoreCard}>
+            <Text style={styles.scoreLabel}>Score</Text>
+            <Text style={styles.scoreValue}>{score}/{quizData.length}</Text>
+          </View>
         </View>
       </View>
 
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
-        <ProgressBar progress={progress} />
+        <ProgressBar progress={progress} color={Colors.primaryPurple} />
         <Text style={styles.progressText}>
           Question {currentQuestion + 1} of {quizData.length}
         </Text>
@@ -129,20 +124,17 @@ const QuizScreen: React.FC = () => {
         <Text style={styles.question}>{current.question}</Text>
         
         <TouchableOpacity 
-          style={styles.audioButton}
+          style={styles.letterCard}
           onPress={() => playSound(current.audioFile)}
           activeOpacity={0.8}
         >
           <LinearGradient
             colors={[Colors.primaryPurple, Colors.primaryPurpleDark]}
-            style={styles.audioButtonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            style={styles.letterGradient}
           >
             <Text style={styles.letter}>{current.letter}</Text>
-            <View style={styles.audioHintContainer}>
-              <Text style={styles.audioIcon}>🔊</Text>
-              <Text style={styles.audioHint}>Tap to hear</Text>
+            <View style={styles.soundBadge}>
+              <Text style={styles.soundIcon}>🔊</Text>
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -175,15 +167,93 @@ const QuizScreen: React.FC = () => {
                 {option}
               </Text>
               {showResult && isCorrectOption && (
-                <Text style={styles.optionIcon}>✓</Text>
+                <View style={styles.iconBadge}>
+                  <Text style={styles.optionIcon}>✓</Text>
+                </View>
               )}
               {showResult && isSelected && !isCorrectOption && (
-                <Text style={styles.optionIcon}>✗</Text>
+                <View style={[styles.iconBadge, styles.wrongBadge]}>
+                  <Text style={styles.optionIcon}>✗</Text>
+                </View>
               )}
             </TouchableOpacity>
           );
         })}
       </View>
+
+      {/* Complete Modal */}
+      <Modal
+        visible={showComplete}
+        transparent
+        animationType="none"
+        onRequestClose={() => {}}
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View 
+            style={[
+              styles.modalContent,
+              {
+                transform: [
+                  {
+                    scale: modalAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.8, 1],
+                    }),
+                  },
+                ],
+                opacity: modalAnim,
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={[Colors.white, Colors.primaryPurpleLight]}
+              style={styles.modalGradient}
+            >
+              <Text style={styles.modalEmoji}>🎉</Text>
+              <Text style={styles.modalTitle}>Quiz Complete!</Text>
+              <Text style={styles.modalSubtitle}>
+                {getScoreMessage(percentage)}
+              </Text>
+              
+              <View style={styles.scoreDisplay}>
+                <Text style={styles.scoreLarge}>{finalScore}/{quizData.length}</Text>
+                <Text style={styles.percentageText}>{percentage}%</Text>
+              </View>
+              
+              {/* Stars */}
+              <View style={styles.starsContainer}>
+                {[1, 2, 3].map((star) => (
+                  <Text 
+                    key={star} 
+                    style={[
+                      styles.star,
+                      star <= quizStars && styles.starActive
+                    ]}
+                  >
+                    ⭐
+                  </Text>
+                ))}
+              </View>
+              
+              <Text style={styles.starsText}>
+                +{quizStars} stars earned
+              </Text>
+              
+              <TouchableOpacity
+                style={styles.restartButton}
+                onPress={handleRestart}
+              >
+                <LinearGradient
+                  colors={[Colors.primaryPurple, Colors.primaryPurpleDark]}
+                  style={styles.restartGradient}
+                >
+                  <Text style={styles.restartText}>Play Again</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -194,48 +264,53 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
+    paddingHorizontal: Spacing.screenPadding,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
-    paddingVertical: Spacing.lg,
   },
   headerLeft: {
     flex: 1,
   },
   title: {
-    fontSize: FontSize.h2,
+    fontSize: 28,
     fontWeight: FontWeight.extrabold,
     color: Colors.text,
     marginBottom: Spacing.xs,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: FontSize.bodySmall,
-    fontWeight: FontWeight.medium,
+    fontSize: 15,
+    fontWeight: FontWeight.regular,
     color: Colors.textSecondary,
   },
-  scoreContainer: {
-    backgroundColor: Colors.primaryPurpleLight,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+  scoreCard: {
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
-    minWidth: 70,
+    minWidth: 80,
+    ...Shadows.medium,
   },
   scoreLabel: {
     fontSize: FontSize.caption,
     fontWeight: FontWeight.semibold,
-    color: Colors.primaryPurpleDark,
-    marginBottom: Spacing.xs,
+    color: Colors.textSecondary,
+    marginBottom: 2,
   },
   scoreValue: {
-    fontSize: FontSize.h2,
-    fontWeight: FontWeight.black,
-    color: Colors.primaryPurpleDark,
+    fontSize: 20,
+    fontWeight: FontWeight.extrabold,
+    color: Colors.primaryPurple,
   },
   progressContainer: {
     paddingHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   progressText: {
     fontSize: FontSize.caption,
@@ -247,48 +322,45 @@ const styles = StyleSheet.create({
   questionContainer: {
     alignItems: 'center',
     paddingHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.xxl,
+    marginBottom: Spacing.xl,
   },
   question: {
-    fontSize: FontSize.h4,
+    fontSize: FontSize.h3,
     fontWeight: FontWeight.bold,
     color: Colors.text,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
     textAlign: 'center',
   },
-  audioButton: {
+  letterCard: {
     borderRadius: BorderRadius.xl,
     overflow: 'hidden',
-    ...Shadows.medium,
+    ...Shadows.large,
   },
-  audioButtonGradient: {
-    paddingHorizontal: Spacing.xxxl,
-    paddingVertical: Spacing.xxl,
+  letterGradient: {
+    paddingHorizontal: 60,
+    paddingVertical: 40,
     alignItems: 'center',
-    minWidth: 200,
+    position: 'relative',
   },
   letter: {
-    fontSize: FontSize.arabicDisplay,
+    fontSize: 80,
     fontWeight: FontWeight.black,
     color: Colors.white,
-    marginBottom: Spacing.md,
+    fontFamily: 'Cairo_700Bold',
   },
-  audioHintContainer: {
-    flexDirection: 'row',
+  soundBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
   },
-  audioIcon: {
-    fontSize: FontSize.body,
-    marginRight: Spacing.xs,
-  },
-  audioHint: {
-    fontSize: FontSize.bodySmall,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
+  soundIcon: {
+    fontSize: 18,
   },
   options: {
     paddingHorizontal: Spacing.screenPadding,
@@ -297,7 +369,7 @@ const styles = StyleSheet.create({
   optionButton: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
@@ -312,14 +384,27 @@ const styles = StyleSheet.create({
     color: Colors.text,
     flex: 1,
   },
+  iconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.success,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: Spacing.sm,
+  },
+  wrongBadge: {
+    backgroundColor: Colors.error,
+  },
   optionIcon: {
-    fontSize: FontSize.h3,
+    fontSize: 16,
     fontWeight: FontWeight.black,
-    marginLeft: Spacing.md,
+    color: Colors.white,
   },
   correctOption: {
     backgroundColor: Colors.successLight,
     borderColor: Colors.success,
+    borderWidth: 3,
   },
   correctOptionText: {
     color: Colors.successDark,
@@ -327,9 +412,94 @@ const styles = StyleSheet.create({
   wrongOption: {
     backgroundColor: Colors.errorLight,
     borderColor: Colors.error,
+    borderWidth: 3,
   },
   wrongOptionText: {
     color: Colors.errorDark,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.screenPadding,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+    ...Shadows.large,
+  },
+  modalGradient: {
+    padding: Spacing.xxl,
+    alignItems: 'center',
+  },
+  modalEmoji: {
+    fontSize: 64,
+    marginBottom: Spacing.md,
+  },
+  modalTitle: {
+    fontSize: FontSize.h1,
+    fontWeight: FontWeight.extrabold,
+    color: Colors.text,
+    marginBottom: Spacing.xs,
+  },
+  modalSubtitle: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.lg,
+    textAlign: 'center',
+  },
+  scoreDisplay: {
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  scoreLarge: {
+    fontSize: 48,
+    fontWeight: FontWeight.black,
+    color: Colors.primaryPurple,
+  },
+  percentageText: {
+    fontSize: FontSize.h3,
+    fontWeight: FontWeight.bold,
+    color: Colors.textSecondary,
+    marginTop: Spacing.xs,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  star: {
+    fontSize: 48,
+    opacity: 0.3,
+  },
+  starActive: {
+    opacity: 1,
+  },
+  starsText: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xl,
+  },
+  restartButton: {
+    width: '100%',
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    ...Shadows.medium,
+  },
+  restartGradient: {
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
+  },
+  restartText: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
   },
 });
 
