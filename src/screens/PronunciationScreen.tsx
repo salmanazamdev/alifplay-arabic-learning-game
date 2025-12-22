@@ -99,13 +99,21 @@ const PronunciationScreen: React.FC = () => {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>🔊 Pronunciation Practice</Text>
-        <Text style={styles.subtitle}>Tap any letter to hear its sound!</Text>
-        <View style={styles.statsContainer}>
-          <StatBadge
-            value={arabicLetters.length}
-            label="Letters"
-          />
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.title}>Letter Sounds</Text>
+            <Text style={styles.subtitle}>Perfect your Arabic pronunciation</Text>
+          </View>
+          
+          <View style={styles.headerRight}>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>{arabicLetters.length}</Text>
+              <Text style={styles.statLabel}>Letters</Text>
+              <View style={styles.iconBadge}>
+                <Text style={styles.iconText}>🔊</Text>
+              </View>
+            </View>
+          </View>
         </View>
       </View>
 
@@ -137,25 +145,68 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.screenPadding,
-    paddingVertical: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.xl,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: Spacing.md,
+  },
+  headerLeft: {
+    flex: 1,
   },
   title: {
-    fontSize: FontSize.h2,
+    fontSize: 28,
     fontWeight: FontWeight.extrabold,
     color: Colors.text,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: FontSize.bodySmall,
-    fontWeight: FontWeight.medium,
+    fontSize: 15,
+    fontWeight: FontWeight.regular,
     color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.lg,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: Spacing.md,
+  headerRight: {
+    alignItems: 'flex-end',
+  },
+  statCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    alignItems: 'center',
+    minWidth: 100,
+    ...Shadows.medium,
+    position: 'relative',
+  },
+  statNumber: {
+    fontSize: 32,
+    fontWeight: FontWeight.extrabold,
+    color: Colors.primaryGreen,
+    lineHeight: 36,
+  },
+  statLabel: {
+    fontSize: FontSize.bodySmall,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.semibold,
+    marginTop: 2,
+  },
+  iconBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primaryBlue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.small,
+  },
+  iconText: {
+    fontSize: 16,
   },
   grid: {
     paddingHorizontal: Spacing.screenPadding,
