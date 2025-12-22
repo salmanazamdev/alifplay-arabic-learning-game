@@ -1,75 +1,74 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
+  Dimensions,
   StatusBar,
+  PanResponder,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import NetInfo from '@react-native-community/netinfo';
-import { Wifi, WifiOff } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
+import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
-import { Colors, FontSize, FontWeight, Spacing, Shadows } from '../constants';
+import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
+import { arabicLetters } from '../utils/gameData';
+
+const { width } = Dimensions.get('window');
+const CANVAS_SIZE = Math.min(width - Spacing.screenPadding * 2, 350);
+
+interface PathData {
+  path: string;
+  color: string;
+}
 
 const TracingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const webviewRef = useRef<WebView | null>(null);
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // State
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [paths, setPaths] = useState<PathData[]>([]);
+  const [currentPath, setCurrentPath] = useState<string>('');
+  const [isComplete, setIsComplete] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
+  
+  const currentLetter = arabicLetters[currentIndex];
 
-  // Check internet connectivity
-  useEffect(() => {
-    // Skip connectivity check - HTML works offline from assets
-    setIsConnected(true);
-    setIsLoading(false);
-  }, []);
+  // PanResponder for drawing
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      
+      onPanResponderGrant: (evt) => {
+        const { locationX, locationY } = evt.nativeEvent;
+        setCurrentPath(`M${locationX},${locationY}`);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      },
+      
+      onPanResponderMove: (evt) => {
+        const { locationX, locationY } = evt.nativeEvent;
+        setCurrentPath((prev) => `${prev} L${locationX},${locationY}`);
+      },
+      
+      onPanResponderRelease: () => {
+        if (currentPath) {
+          setPaths((prev) => [...prev, { path: currentPath, color: Colors.primaryGreen }]);
+          setCurrentPath('');
+        }
+      },
+    })
+  ).current;
 
-  const audioMap: Record<string, any> = {
-    'ا': require('../../assets/audio/alif.mp3'),
-    'ب': require('../../assets/audio/baa.mp3'),
-    'ت': require('../../assets/audio/taa.mp3'),
-    'ث': require('../../assets/audio/thaa.mp3'),
-    'ج': require('../../assets/audio/jeem.mp3'),
-    'ح': require('../../assets/audio/haa.mp3'),
-    'خ': require('../../assets/audio/khaa.mp3'),
-    'د': require('../../assets/audio/dal.mp3'),
-    'ذ': require('../../assets/audio/thal.mp3'),
-    'ر': require('../../assets/audio/raa.mp3'),
-    'ز': require('../../assets/audio/zay.mp3'),
-    'س': require('../../assets/audio/seen.mp3'),
-    'ش': require('../../assets/audio/sheen.mp3'),
-    'ص': require('../../assets/audio/sad.mp3'),
-    'ض': require('../../assets/audio/dad.mp3'),
-    'ط': require('../../assets/audio/tah.mp3'),
-    'ظ': require('../../assets/audio/zah.mp3'),
-    'ع': require('../../assets/audio/ain.mp3'),
-    'غ': require('../../assets/audio/ghain.mp3'),
-    'ف': require('../../assets/audio/faa.mp3'),
-    'ق': require('../../assets/audio/qaf.mp3'),
-    'ك': require('../../assets/audio/kaf.mp3'),
-    'ل': require('../../assets/audio/lam.mp3'),
-    'م': require('../../assets/audio/meem.mp3'),
-    'ن': require('../../assets/audio/noon.mp3'),
-    'ه': require('../../assets/audio/haa2.mp3'),
-    'و': require('../../assets/audio/waw.mp3'),
-    'ي': require('../../assets/audio/yaa.mp3'),
-  };
-
-  const playArabicSound = async (char: string) => {
+  // Audio playback
+  const playAudio = async (audioFile: string) => {
     try {
-      const audioSource = audioMap[char];
-      if (!audioSource) {
-        console.warn(`No audio found for character: ${char}`);
-        return;
-      }
-
+      const audioSource = require(`../../assets/audio/${audioFile}`);
       const { sound } = await Audio.Sound.createAsync(audioSource);
       await sound.playAsync();
-
-      // Unload after playing
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
           sound.unloadAsync();
@@ -80,94 +79,221 @@ const TracingScreen: React.FC = () => {
     }
   };
 
-  const onMessage = (event: WebViewMessageEvent) => {
-    const data = event.nativeEvent.data;
-    console.log('WebView message received:', data);
-    if (data.startsWith('PLAY_AUDIO:')) {
-      const char = data.replace('PLAY_AUDIO:', '');
-      playArabicSound(char);
+  // Clear drawing
+  const handleClear = () => {
+    setPaths([]);
+    setCurrentPath('');
+    setIsComplete(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  // Undo last stroke
+  const handleUndo = () => {
+    if (paths.length > 0) {
+      setPaths((prev) => prev.slice(0, -1));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
 
-  const onError = (syntheticEvent: any) => {
-    const { nativeEvent } = syntheticEvent;
-    console.error('WebView error:', nativeEvent);
+  // Validate and complete
+  const handleDone = async () => {
+    if (paths.length === 0 && !currentPath) {
+      Alert.alert('No Drawing', 'Please draw on the canvas before completing.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+
+    // Simple validation: just check if they drew something
+    setIsComplete(true);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await playAudio(currentLetter.audioFile);
   };
 
-  const onLoadEnd = () => {
-    console.log('WebView loaded successfully');
+  // Next letter
+  const handleNext = () => {
+    if (currentIndex < arabicLetters.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setIsComplete(false);
+      setPaths([]);
+      setCurrentPath('');
+      setShowGuide(true);
+    } else {
+      Alert.alert(
+        'Completed! 🎉',
+        `You've practiced all ${arabicLetters.length} letters!`,
+        [
+          {
+            text: 'Restart',
+            onPress: () => {
+              setCurrentIndex(0);
+              setIsComplete(false);
+              setPaths([]);
+              setCurrentPath('');
+            },
+          },
+        ]
+      );
+    }
   };
 
-  const checkConnection = async () => {
-    setIsLoading(true);
-    const state = await NetInfo.fetch();
-    setIsConnected(state.isConnected);
-    setIsLoading(false);
+  // Skip letter
+  const handleSkip = () => {
+    handleNext();
   };
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" />
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={Colors.primaryGreen} />
-          <Text style={styles.loadingText}>Checking connection...</Text>
-        </View>
-      </View>
-    );
-  }
+  const progress = ((currentIndex + 1) / arabicLetters.length) * 100;
 
-  // Show offline screen
-  if (isConnected === false) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" />
-        <View style={styles.offlineContainer}>
-          <WifiOff size={80} color="#999" />
-          <Text style={styles.offlineTitle}>No Internet Connection</Text>
-          <Text style={styles.offlineMessage}>
-            The Letter Tracing game works offline!
-          </Text>
-          <Text style={styles.offlineHint}>
-            You can practice tracing Arabic letters without an internet connection.
-          </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={checkConnection}>
-            <Wifi size={20} color="#fff" />
-            <Text style={styles.retryButtonText}>Check Connection</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  // Show WebView when ready
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
-      <WebViewfalse}
-        onMessage={onMessage}
-        onError={onError}
-        onLoadEnd={onLoadEnd}
-        style={{ flex: 1, backgroundColor: Colors.background{['*']}
-        source={require('../../assets/arabic/arabic-tracing.html')}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        allowFileAccess={true}
-        allowUniversalAccessFromFileURLs={true}
-        allowFileAccessFromFileURLs={true}
-        mixedContentMode="always"
-        cacheEnabled={true}
-        onMessage={onMessage}
-        style={{ flex: 1 }}
-        startInLoadingState={true}
-        renderLoading={() => (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={Colors.primaryGreen} />
-            <Text style={styles.loadingText}>Loading tracing game...</Text>
+
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>✍️ Letter Tracing</Text>
+          <Text style={styles.subtitle}>Draw the letter with your finger</Text>
+        </View>
+        <View style={styles.progressBadge}>
+          <Text style={styles.progressText}>
+            {currentIndex + 1}/{arabicLetters.length}
+          </Text>
+        </View>
+      </View>
+
+      {/* Progress Bar */}
+      <View style={styles.progressBar}>
+        <View style={[styles.progressFill, { width: `${progress}%` }]} />
+      </View>
+
+      {/* Letter Info */}
+      <View style={styles.letterCard}>
+        <View style={styles.letterCircle}>
+          <Text style={styles.letterText}>{currentLetter.letter}</Text>
+        </View>
+        <View style={styles.letterInfo}>
+          <Text style={styles.letterName}>{currentLetter.name}</Text>
+          <Text style={styles.pronunciation}>"{currentLetter.pronunciation}"</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.audioBtn}
+          onPress={() => playAudio(currentLetter.audioFile)}
+        >
+          <Text style={styles.audioBtnText}>🔊</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Canvas */}
+      <View style={styles.canvasContainer}>
+        {/* Guide Letter */}
+        {showGuide && (
+          <View style={styles.guideContainer} pointerEvents="none">
+            <Text style={styles.guideLetter}>{currentLetter.letter}</Text>
           </View>
         )}
-      />
+
+        {/* Drawing Surface */}
+        <View style={styles.canvas} {...panResponder.panHandlers}>
+          <Svg height={CANVAS_SIZE} width={CANVAS_SIZE}>
+            {/* Completed paths */}
+            {paths.map((pathData, index) => (
+              <Path
+                key={index}
+                d={pathData.path}
+                stroke={pathData.color}
+                strokeWidth={12}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            ))}
+            
+            {/* Current path being drawn */}
+            {currentPath && (
+              <Path
+                d={currentPath}
+                stroke={Colors.primaryGreen}
+                strokeWidth={12}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+                opacity={0.8}
+              />
+            )}
+          </Svg>
+        </View>
+
+        {/* Hint */}
+        {paths.length === 0 && !currentPath && (
+          <View style={styles.hintContainer} pointerEvents="none">
+            <Text style={styles.hintEmoji}>👆</Text>
+            <Text style={styles.hintText}>Draw here</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Success Message */}
+      {isComplete && (
+        <View style={styles.successCard}>
+          <Text style={styles.successEmoji}>🎉</Text>
+          <Text style={styles.successText}>Great Job!</Text>
+        </View>
+      )}
+
+      {/* Controls */}
+      <View style={styles.controls}>
+        {/* Guide Toggle */}
+        <TouchableOpacity
+          style={[styles.smallBtn, !showGuide && styles.smallBtnInactive]}
+          onPress={() => setShowGuide(!showGuide)}
+        >
+          <Text style={styles.smallBtnText}>{showGuide ? '👁️' : '👁️‍🗨️'}</Text>
+        </TouchableOpacity>
+
+        {/* Undo */}
+        <TouchableOpacity
+          style={[styles.smallBtn, paths.length === 0 && styles.smallBtnDisabled]}
+          onPress={handleUndo}
+          disabled={paths.length === 0}
+        >
+          <Text style={styles.smallBtnText}>↶</Text>
+        </TouchableOpacity>
+
+        {/* Clear */}
+        <TouchableOpacity
+          style={[styles.smallBtn, (paths.length === 0 && !currentPath) && styles.smallBtnDisabled]}
+          onPress={handleClear}
+          disabled={paths.length === 0 && !currentPath}
+        >
+          <Text style={styles.smallBtnText}>🗑️</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionRow}>
+        <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
+          <Text style={styles.skipBtnText}>Skip →</Text>
+        </TouchableOpacity>
+
+        {!isComplete ? (
+          <TouchableOpacity style={styles.doneBtn} onPress={handleDone}>
+            <LinearGradient
+              colors={[Colors.primaryGreen, Colors.primaryGreenDark]}
+              style={styles.gradientBtn}
+            >
+              <Text style={styles.doneBtnText}>✓ Done</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
+            <LinearGradient
+              colors={[Colors.primaryBlue, Colors.primaryBlueDark]}
+              style={styles.gradientBtn}
+            >
+              <Text style={styles.nextBtnText}>Next →</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };
@@ -177,58 +303,231 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingVertical: Spacing.lg,
   },
-  loadingText: {
-    marginTop: Spacing.md,
-    fontSize: FontSize.body,
-    color: Colors.textSecondary,
-  },
-  offlineContainer: {
+  headerContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-    padding: Spacing.screenPadding,
   },
-  offlineTitle: {
+  title: {
     fontSize: FontSize.h2,
     fontWeight: FontWeight.bold,
     color: Colors.text,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.md,
-    textAlign: 'center',
   },
-  offlineMessage: {
-    fontSize: FontSize.body,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.sm,
-    lineHeight: 24,
-  },
-  offlineHint: {
+  subtitle: {
     fontSize: FontSize.bodySmall,
-    color: Colors.textLight,
-    textAlign: 'center',
-    marginBottom: Spacing.xl,
+    color: Colors.textSecondary,
+    marginTop: 4,
   },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  progressBadge: {
     backgroundColor: Colors.primaryGreen,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderRadius: 8,
-    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
   },
-  retryButtonText: {
-    color: Colors.white,
+  progressText: {
     fontSize: FontSize.body,
     fontWeight: FontWeight.bold,
+    color: Colors.white,
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: Colors.borderLight,
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: Spacing.lg,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.primaryGreen,
+  },
+  letterCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: Spacing.lg,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    ...Shadows.medium,
+  },
+  letterCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.primaryOrangeLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  letterText: {
+    fontSize: 36,
+    fontFamily: 'Cairo_700Bold',
+    color: Colors.primaryOrangeDark,
+  },
+  letterInfo: {
+    flex: 1,
+    marginLeft: Spacing.md,
+  },
+  letterName: {
+    fontSize: FontSize.h3,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+  },
+  pronunciation: {
+    fontSize: FontSize.body,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  audioBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.primaryBlue,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  audioBtnText: {
+    fontSize: 20,
+  },
+  canvasContainer: {
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.xl,
+    ...Shadows.large,
+    borderWidth: 3,
+    borderColor: Colors.primaryGreenLight,
+    height: CANVAS_SIZE + 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  guideContainer: {
+    position: 'absolute',
+    width: CANVAS_SIZE,
+    height: CANVAS_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  guideLetter: {
+    fontSize: 180,
+    fontFamily: 'Cairo_700Bold',
+    color: Colors.borderLight,
+    opacity: 0.25,
+  },
+  canvas: {
+    width: CANVAS_SIZE,
+    height: CANVAS_SIZE,
+    zIndex: 2,
+  },
+  hintContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 3,
+  },
+  hintEmoji: {
+    fontSize: 36,
+    marginBottom: 4,
+  },
+  hintText: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textLight,
+  },
+  successCard: {
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.primaryGreen,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    alignItems: 'center',
+  },
+  successEmoji: {
+    fontSize: 36,
+  },
+  successText: {
+    fontSize: FontSize.h3,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+    marginTop: 4,
+  },
+  controls: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: Spacing.md,
+  },
+  smallBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.small,
+  },
+  smallBtnInactive: {
+    opacity: 0.5,
+  },
+  smallBtnDisabled: {
+    opacity: 0.3,
+  },
+  smallBtnText: {
+    fontSize: 24,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: Spacing.md,
+  },
+  skipBtn: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.small,
+  },
+  skipBtnText: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
+    color: Colors.textSecondary,
+  },
+  doneBtn: {
+    flex: 2,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    ...Shadows.medium,
+  },
+  nextBtn: {
+    flex: 2,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    ...Shadows.medium,
+  },
+  gradientBtn: {
+    paddingVertical: Spacing.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  doneBtnText: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  },
+  nextBtnText: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
   },
 });
 
