@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Arabic Letter Tracing</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: #ffffff; 
+      margin: 0; 
+      padding: 0; 
+      min-height: 100vh;
+      direction: rtl;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    .header { 
+      padding-top: 60px; 
+      padding-bottom: 16px; 
+      padding-left: 24px; 
+      padding-right: 24px; 
+      background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+      border-bottom: 1px solid #E5E5E5; 
+      text-align: center; 
+    }
+    .header h3 { 
+      margin: 0; 
+      font-size: 24px; 
+      font-weight: bold; 
+      color: #ffffff; 
+    }
+    .header p { 
+      margin-top: 8px; 
+      margin-bottom: 9px; 
+      font-size: 14px; 
+      font-weight: 500; 
+      color: rgba(255, 255, 255, 0.9); 
+    }
+    .container { 
+      max-width: 420px; 
+      margin: auto; 
+      padding: 16px; 
+      margin-bottom: 30vh; 
+    }
+    .card { 
+      background: #fff; 
+      border-radius: 12px; 
+      padding: 16px; 
+      margin-bottom: 16px; 
+      border: 1px solid #e0e0e0; 
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); 
+    }
+    label { 
+      display: block; 
+      font-size: 14px; 
+      margin-bottom: 6px; 
+      color: #333; 
+      font-weight: 600;
+    }
+    .input-row { 
+      display: flex; 
+      gap: 8px; 
+      align-items: center; 
+      margin-bottom: 12px; 
+    }
+    select { 
+      flex: 1; 
+      padding: 10px; 
+      border: 1px solid #ccc; 
+      border-radius: 8px; 
+      background: #fff; 
+      font-size: 18px;
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+    }
+    .load-btn { 
+      padding: 10px 20px; 
+      background: #f8f8f8; 
+      color: #333; 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-size: 14px; 
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .load-btn.active { 
+      background: #333; 
+      color: #fff; 
+    }
+    .load-btn:active {
+      transform: scale(0.95);
+    }
+    .size-label { 
+      font-size: 14px; 
+      color: #333; 
+      margin-bottom: 6px; 
+      display: block; 
+      font-weight: 600;
+    }
+    #sizeSlider { 
+      width: 100%; 
+      appearance: none; 
+      height: 4px; 
+      border-radius: 4px; 
+      background: #000; 
+      outline: none; 
+      margin-bottom: 20px; 
+    }
+    #sizeSlider::-webkit-slider-thumb { 
+      appearance: none; 
+      width: 18px; 
+      height: 18px; 
+      border-radius: 50%; 
+      background: #333; 
+      cursor: pointer; 
+    }
+    #sizeSlider::-moz-range-thumb { 
+      width: 18px; 
+      height: 18px; 
+      border-radius: 50%; 
+      background: #333; 
+      cursor: pointer; 
+    }
+    .button-grid { 
+      display: grid; 
+      grid-template-columns: repeat(2, 1fr); 
+      gap: 8px; 
+      margin-bottom: 10px; 
+    }
+    .action-btn { 
+      padding: 12px; 
+      background: #f8f8f8; 
+      color: #333; 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      font-size: 14px; 
+      cursor: pointer; 
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .action-btn.active { 
+      background: #333; 
+      color: #fff; 
+    }
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+    .toggle-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 8px; 
+    }
+    .toggle-btn { 
+      padding: 12px; 
+      border-radius: 8px; 
+      font-size: 14px; 
+      cursor: pointer; 
+      border: none; 
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .toggle-btn.active { 
+      background: #333; 
+      color: #fff; 
+    }
+    .toggle-btn.inactive { 
+      background: #f8f8f8; 
+      color: #333; 
+      border: 1px solid #ddd; 
+    }
+    .toggle-btn:active {
+      transform: scale(0.95);
+    }
+    #canvasContainer { 
+      position: relative;
+      margin: 0 auto; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      background: #fff; 
+      max-width: 90vw; 
+      aspect-ratio: 1 / 1;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #guideCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    #drawCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      touch-action: none;
+    }
+    #completedContainer { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 8px; 
+      min-height: 40px;
+    }
+    .completed-char { 
+      padding: 8px 12px; 
+      background-color: #c6f6d5; 
+      color: #22543d; 
+      border-radius: 8px; 
+      font-size: 20px; 
+      text-align: center; 
+      font-weight: 600;
+    }
+    .feedback {
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .feedback.success {
+      background-color: #c6f6d5;
+      color: #22543d;
+    }
+    .feedback.warning {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .empty-state {
+      text-align: center;
+      color: #999;
+      font-size: 14px;
+      padding: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h3>تتبع الحروف العربية</h3>
+    <p>تدرب على كتابة الحروف العربية بتتبعها</p>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <label>اختر الحرف:</label>
+      <div class="input-row">
+        <select id="letterSelect">
+          <option value="ا">ا - ألف</option>
+          <option value="ب">ب - باء</option>
+          <option value="ت">ت - تاء</option>
+          <option value="ث">ث - ثاء</option>
+          <option value="ج">ج - جيم</option>
+          <option value="ح">ح - حاء</option>
+          <option value="خ">خ - خاء</option>
+          <option value="د">د - دال</option>
+          <option value="ذ">ذ - ذال</option>
+          <option value="ر">ر - راء</option>
+          <option value="ز">ز - زاي</option>
+          <option value="س">س - سين</option>
+          <option value="ش">ش - شين</option>
+          <option value="ص">ص - صاد</option>
+          <option value="ض">ض - ضاد</option>
+          <option value="ط">ط - طاء</option>
+          <option value="ظ">ظ - ظاء</option>
+          <option value="ع">ع - عين</option>
+          <option value="غ">غ - غين</option>
+          <option value="ف">ف - فاء</option>
+          <option value="ق">ق - قاف</option>
+          <option value="ك">ك - كاف</option>
+          <option value="ل">ل - لام</option>
+          <option value="م">م - ميم</option>
+          <option value="ن">ن - نون</option>
+          <option value="ه">ه - هاء</option>
+          <option value="و">و - واو</option>
+          <option value="ي">ي - ياء</option>
+        </select>
+        <button class="load-btn" id="loadBtn">تحميل</button>
+      </div>
+
+      <label class="size-label">الحجم: <span id="sizeLabel">250</span> نقطة</label>
+      <input id="sizeSlider" type="range" min="150" max="300" value="250"/>
+
+      <div class="button-grid">
+        <button class="action-btn" id="practiceBtn">ابدأ التدريب</button>
+        <button class="action-btn" id="clearBtn">مسح</button>
+        <button class="action-btn" id="resetBtn">إعادة تعيين</button>
+        <button class="action-btn" id="startAgainBtn">ابدأ من جديد</button>
+      </div>
+      <div class="toggle-grid">
+        <button class="toggle-btn active" id="guideBtn">إخفاء الدليل</button>
+        <button class="toggle-btn active" id="letterBtn">إخفاء الحرف</button>
+      </div>
+
+      <div style="margin-top: 12px;">
+        <button class="action-btn" id="playSoundBtn" style="width: 100%;">🔊 تشغيل الصوت</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="feedbackArea"></div>
+      <div id="canvasContainer">
+        <canvas id="guideCanvas"></canvas>
+        <canvas id="drawCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4 style="margin-bottom: 12px; font-size: 18px;">الحروف المكتملة</h4>
+      <div id="completedContainer">
+        <div class="empty-state">لم تكمل أي حروف بعد</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const arabicLetters = ["ا","ب","ت","ث","ج","ح","خ","د","ذ","ر","ز","س","ش","ص","ض","ط","ظ","ع","غ","ف","ق","ك","ل","م","ن","ه","و","ي"];
+    
+    let currentLetter = "ا";
+    let size = 250;
+    let showGuide = true;
+    let showLetter = true;
+    let isPracticing = false;
+    let completedLetters = new Set();
+    
+    let guideCanvas = null;
+    let drawCanvas = null;
+    let guideCtx = null;
+    let drawCtx = null;
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let strokes = [];
+
+    const completedContainer = document.getElementById("completedContainer");
+    const feedbackArea = document.getElementById("feedbackArea");
+
+    function sendToRN(msg) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(msg);
+      } else {
+        console.log("RNBridge:", msg);
+      }
+    }
+
+    function showFeedback(message, type) {
+      feedbackArea.innerHTML = `<div class="feedback ${type}">${message}</div>`;
+      setTimeout(() => {
+        feedbackArea.innerHTML = "";
+      }, 3000);
+    }
+
+    function initCanvas() {
+      const container = document.getElementById("canvasContainer");
+      guideCanvas = document.getElementById("guideCanvas");
+      drawCanvas = document.getElementById("drawCanvas");
+      
+      guideCanvas.width = size;
+      guideCanvas.height = size;
+      drawCanvas.width = size;
+      drawCanvas.height = size;
+      
+      guideCtx = guideCanvas.getContext("2d");
+      drawCtx = drawCanvas.getContext("2d");
+      
+      drawGuide();
+      clearDrawing();
+    }
+
+    function drawGuide() {
+      guideCtx.clearRect(0, 0, size, size);
+      
+      if (showLetter) {
+        guideCtx.font = `${size * 0.7}px Cairo, Arial`;
+        guideCtx.fillStyle = showGuide ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.05)";
+        guideCtx.textAlign = "center";
+        guideCtx.textBaseline = "middle";
+        guideCtx.fillText(currentLetter, size / 2, size / 2);
+      }
+      
+      if (showGuide) {
+        // Draw grid lines
+        guideCtx.strokeStyle = "rgba(0, 0, 0, 0.1)";
+        guideCtx.lineWidth = 1;
+        guideCtx.setLineDash([5, 5]);
+        
+        // Vertical center
+        guideCtx.beginPath();
+        guideCtx.moveTo(size / 2, 0);
+        guideCtx.lineTo(size / 2, size);
+        guideCtx.stroke();
+        
+        // Horizontal center
+        guideCtx.beginPath();
+        guideCtx.moveTo(0, size / 2);
+        guideCtx.lineTo(size, size / 2);
+        guideCtx.stroke();
+        
+        guideCtx.setLineDash([]);
+      }
+    }
+
+    function clearDrawing() {
+      drawCtx.clearRect(0, 0, size, size);
+      strokes = [];
+      isDrawing = false;
+    }
+
+    function getTouchPos(e) {
+      const rect = drawCanvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      return {
+        x: (touch.clientX - rect.left) * (size / rect.width),
+        y: (touch.clientY - rect.top) * (size / rect.height)
+      };
+    }
+
+    function startDrawing(e) {
+      e.preventDefault();
+      if (!isPracticing) return;
+      
+      isDrawing = true;
+      const pos = getTouchPos(e);
+      lastX = pos.x;
+      lastY = pos.y;
+      strokes.push([{x: pos.x, y: pos.y}]);
+    }
+
+    function draw(e) {
+      e.preventDefault();
+      if (!isDrawing || !isPracticing) return;
+      
+      const pos = getTouchPos(e);
+      
+      drawCtx.strokeStyle = "#000";
+      drawCtx.lineWidth = size * 0.04;
+      drawCtx.lineCap = "round";
+      drawCtx.lineJoin = "round";
+      
+      drawCtx.beginPath();
+      drawCtx.moveTo(lastX, lastY);
+      drawCtx.lineTo(pos.x, pos.y);
+      drawCtx.stroke();
+      
+      strokes[strokes.length - 1].push({x: pos.x, y: pos.y});
+      
+      lastX = pos.x;
+      lastY = pos.y;
+    }
+
+    function stopDrawing(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      isDrawing = false;
+    }
+
+    function validateDrawing() {
+      if (strokes.length === 0) {
+        showFeedback("الرجاء الرسم على اللوحة", "warning");
+        return false;
+      }
+      
+      // Simple validation: check if enough pixels were drawn
+      const imageData = drawCtx.getImageData(0, 0, size, size);
+      const pixels = imageData.data;
+      let drawnPixels = 0;
+      
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (pixels[i + 3] > 0) {
+          drawnPixels++;
+        }
+      }
+      
+      const coveragePercent = (drawnPixels / (size * size)) * 100;
+      
+      // Require at least 2% coverage (reasonable for Arabic letters)
+      if (coveragePercent >= 2) {
+        markComplete(currentLetter);
+        showFeedback("أحسنت! ✓", "success");
+        sendToRN("PLAY_AUDIO:" + currentLetter);
+        togglePractice(false);
+        return true;
+      } else {
+        showFeedback("حاول أن تملأ الحرف أكثر", "warning");
+        return false;
+      }
+    }
+
+    function markComplete(letter) {
+      if (completedLetters.has(letter)) return;
+      
+      completedLetters.add(letter);
+      
+      // Remove empty state if exists
+      const emptyState = completedContainer.querySelector(".empty-state");
+      if (emptyState) emptyState.remove();
+      
+      const letterBox = document.createElement("div");
+      letterBox.className = "completed-char";
+      letterBox.textContent = letter;
+      completedContainer.appendChild(letterBox);
+    }
+
+    function togglePractice(forceState = null) {
+      const btn = document.getElementById("practiceBtn");
+      if (forceState === null) {
+        isPracticing = !isPracticing;
+      } else {
+        isPracticing = forceState;
+      }
+      
+      btn.textContent = isPracticing ? "تحقق من الإجابة" : "ابدأ التدريب";
+      btn.classList.toggle("active", isPracticing);
+      
+      if (isPracticing) {
+        clearDrawing();
+      } else if (strokes.length > 0) {
+        validateDrawing();
+      }
+    }
+
+    // Event Listeners
+    document.getElementById("loadBtn").onclick = () => {
+      currentLetter = document.getElementById("letterSelect").value;
+      initCanvas();
+      togglePractice(false);
+    };
+
+    document.getElementById("practiceBtn").onclick = () => togglePractice();
+
+    document.getElementById("clearBtn").onclick = () => {
+      clearDrawing();
+    };
+
+    document.getElementById("resetBtn").onclick = () => {
+      size = 250;
+      document.getElementById("sizeSlider").value = size;
+      document.getElementById("sizeLabel").textContent = size;
+      togglePractice(false);
+      initCanvas();
+    };
+
+    document.getElementById("guideBtn").onclick = () => {
+      showGuide = !showGuide;
+      const btn = document.getElementById("guideBtn");
+      btn.textContent = showGuide ? "إخفاء الدليل" : "إظهار الدليل";
+      btn.classList.toggle("active", showGuide);
+      btn.classList.toggle("inactive", !showGuide);
+      drawGuide();
+    };
+
+    document.getElementById("letterBtn").onclick = () => {
+      showLetter = !showLetter;
+      const btn = document.getElementById("letterBtn");
+      btn.textContent = showLetter ? "إخفاء الحرف" : "إظهار الحرف";
+      btn.classList.toggle("active", showLetter);
+      btn.classList.toggle("inactive", !showLetter);
+      drawGuide();
+    };
+
+    document.getElementById("sizeSlider").addEventListener("input", (e) => {
+      size = parseInt(e.target.value, 10);
+      document.getElementById("sizeLabel").textContent = size;
+      initCanvas();
+      togglePractice(false);
+    });
+
+    document.getElementById("startAgainBtn").onclick = () => {
+      completedLetters.clear();
+      completedContainer.innerHTML = '<div class="empty-state">لم تكمل أي حروف بعد</div>';
+      size = 250;
+      document.getElementById("sizeSlider").value = size;
+      document.getElementById("sizeLabel").textContent = size;
+      togglePractice(false);
+      currentLetter = "ا";
+      document.getElementById("letterSelect").value = currentLetter;
+      initCanvas();
+    };
+
+    document.getElementById("playSoundBtn").onclick = () => {
+      sendToRN("PLAY_AUDIO:" + currentLetter);
+    };
+
+    // Canvas touch events
+    drawCanvas.addEventListener("touchstart", startDrawing, { passive: false });
+    drawCanvas.addEventListener("touchmove", draw, { passive: false });
+    drawCanvas.addEventListener("touchend", stopDrawing, { passive: false });
+    
+    // Mouse events for desktop testing
+    drawCanvas.addEventListener("mousedown", startDrawing);
+    drawCanvas.addEventListener("mousemove", draw);
+    drawCanvas.addEventListener("mouseup", stopDrawing);
+    drawCanvas.addEventListener("mouseleave", stopDrawing);
+
+    // Initialize on load
+    window.addEventListener("load", () => {
+      initCanvas();
+    });
+  </script>
+</body>
+</html>
