@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
@@ -7,12 +7,11 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { 
-      font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
       background: #ffffff; 
       margin: 0; 
       padding: 0; 
       min-height: 100vh;
-      direction: rtl;
       -webkit-user-select: none;
       user-select: none;
       touch-action: manipulation;
@@ -74,7 +73,6 @@
       background: #fff; 
       font-size: 18px;
       font-family: 'Cairo', sans-serif;
-      direction: rtl;
     }
     .load-btn { 
       padding: 10px 20px; 
@@ -244,62 +242,63 @@
 <body>
   <div class="header">
     <h3>تتبع الحروف العربية</h3>
-    <p>تدرب على كتابة الحروف العربية بتتبعها</p>
+    <p>تArabic Letter Tracing</h3>
+    <p>Practice tracing Arabic letters with your finger</p>
   </div>
 
   <div class="container">
     <div class="card">
-      <label>اختر الحرف:</label>
+      <label>Choose Letter:</label>
       <div class="input-row">
         <select id="letterSelect">
-          <option value="ا">ا - ألف</option>
-          <option value="ب">ب - باء</option>
-          <option value="ت">ت - تاء</option>
-          <option value="ث">ث - ثاء</option>
-          <option value="ج">ج - جيم</option>
-          <option value="ح">ح - حاء</option>
-          <option value="خ">خ - خاء</option>
-          <option value="د">د - دال</option>
-          <option value="ذ">ذ - ذال</option>
-          <option value="ر">ر - راء</option>
-          <option value="ز">ز - زاي</option>
-          <option value="س">س - سين</option>
-          <option value="ش">ش - شين</option>
-          <option value="ص">ص - صاد</option>
-          <option value="ض">ض - ضاد</option>
-          <option value="ط">ط - طاء</option>
-          <option value="ظ">ظ - ظاء</option>
-          <option value="ع">ع - عين</option>
-          <option value="غ">غ - غين</option>
-          <option value="ف">ف - فاء</option>
-          <option value="ق">ق - قاف</option>
-          <option value="ك">ك - كاف</option>
-          <option value="ل">ل - لام</option>
-          <option value="م">م - ميم</option>
-          <option value="ن">ن - نون</option>
-          <option value="ه">ه - هاء</option>
-          <option value="و">و - واو</option>
-          <option value="ي">ي - ياء</option>
+          <option value="ا">ا - Alif</option>
+          <option value="ب">ب - Baa</option>
+          <option value="ت">ت - Taa</option>
+          <option value="ث">ث - Thaa</option>
+          <option value="ج">ج - Jeem</option>
+          <option value="ح">ح - Haa</option>
+          <option value="خ">خ - Khaa</option>
+          <option value="د">د - Dal</option>
+          <option value="ذ">ذ - Thal</option>
+          <option value="ر">ر - Raa</option>
+          <option value="ز">ز - Zay</option>
+          <option value="س">س - Seen</option>
+          <option value="ش">ش - Sheen</option>
+          <option value="ص">ص - Sad</option>
+          <option value="ض">ض - Dad</option>
+          <option value="ط">ط - Tah</option>
+          <option value="ظ">ظ - Zah</option>
+          <option value="ع">ع - Ain</option>
+          <option value="غ">غ - Ghain</option>
+          <option value="ف">ف - Faa</option>
+          <option value="ق">ق - Qaf</option>
+          <option value="ك">ك - Kaf</option>
+          <option value="ل">ل - Lam</option>
+          <option value="م">م - Meem</option>
+          <option value="ن">ن - Noon</option>
+          <option value="ه">ه - Haa</option>
+          <option value="و">و - Waw</option>
+          <option value="ي">ي - Yaa</option>
         </select>
-        <button class="load-btn" id="loadBtn">تحميل</button>
+        <button class="load-btn" id="loadBtn">Load</button>
       </div>
 
-      <label class="size-label">الحجم: <span id="sizeLabel">250</span> نقطة</label>
+      <label class="size-label">Size: <span id="sizeLabel">250</span>px</label>
       <input id="sizeSlider" type="range" min="150" max="300" value="250"/>
 
       <div class="button-grid">
-        <button class="action-btn" id="practiceBtn">ابدأ التدريب</button>
-        <button class="action-btn" id="clearBtn">مسح</button>
-        <button class="action-btn" id="resetBtn">إعادة تعيين</button>
-        <button class="action-btn" id="startAgainBtn">ابدأ من جديد</button>
+        <button class="action-btn" id="practiceBtn">Start Practice</button>
+        <button class="action-btn" id="clearBtn">Clear</button>
+        <button class="action-btn" id="resetBtn">Reset</button>
+        <button class="action-btn" id="startAgainBtn">Start Again</button>
       </div>
       <div class="toggle-grid">
-        <button class="toggle-btn active" id="guideBtn">إخفاء الدليل</button>
-        <button class="toggle-btn active" id="letterBtn">إخفاء الحرف</button>
+        <button class="toggle-btn active" id="guideBtn">Hide Guide</button>
+        <button class="toggle-btn active" id="letterBtn">Hide Letter</button>
       </div>
 
       <div style="margin-top: 12px;">
-        <button class="action-btn" id="playSoundBtn" style="width: 100%;">🔊 تشغيل الصوت</button>
+        <button class="action-btn" id="playSoundBtn" style="width: 100%;">🔊 Play Sound</button>
       </div>
     </div>
 
@@ -312,10 +311,9 @@
     </div>
 
     <div class="card">
-      <h4 style="margin-bottom: 12px; font-size: 18px;">الحروف المكتملة</h4>
+      <h4 style="margin-bottom: 12px; font-size: 18px;">Completed Letters</h4>
       <div id="completedContainer">
-        <div class="empty-state">لم تكمل أي حروف بعد</div>
-      </div>
+        <div class="empty-state">No letters completed yet
     </div>
   </div>
 
@@ -462,7 +460,7 @@
 
     function validateDrawing() {
       if (strokes.length === 0) {
-        showFeedback("الرجاء الرسم على اللوحة", "warning");
+        showFeedback("Please draw on the canvas", "warning");
         return false;
       }
       
@@ -482,12 +480,12 @@
       // Require at least 2% coverage (reasonable for Arabic letters)
       if (coveragePercent >= 2) {
         markComplete(currentLetter);
-        showFeedback("أحسنت! ✓", "success");
+        showFeedback("Great job! ✓", "success");
         sendToRN("PLAY_AUDIO:" + currentLetter);
         togglePractice(false);
         return true;
       } else {
-        showFeedback("حاول أن تملأ الحرف أكثر", "warning");
+        showFeedback("Try to fill more of the letter", "warning");
         return false;
       }
     }
@@ -515,7 +513,7 @@
         isPracticing = forceState;
       }
       
-      btn.textContent = isPracticing ? "تحقق من الإجابة" : "ابدأ التدريب";
+      btn.textContent = isPracticing ? "Check Answer" : "Start Practice";
       btn.classList.toggle("active", isPracticing);
       
       if (isPracticing) {
@@ -549,7 +547,7 @@
     document.getElementById("guideBtn").onclick = () => {
       showGuide = !showGuide;
       const btn = document.getElementById("guideBtn");
-      btn.textContent = showGuide ? "إخفاء الدليل" : "إظهار الدليل";
+      btn.textContent = showGuide ? "Hide Guide" : "Show Guide";
       btn.classList.toggle("active", showGuide);
       btn.classList.toggle("inactive", !showGuide);
       drawGuide();
@@ -558,7 +556,7 @@
     document.getElementById("letterBtn").onclick = () => {
       showLetter = !showLetter;
       const btn = document.getElementById("letterBtn");
-      btn.textContent = showLetter ? "إخفاء الحرف" : "إظهار الحرف";
+      btn.textContent = showLetter ? "Hide Letter" : "Show Letter";
       btn.classList.toggle("active", showLetter);
       btn.classList.toggle("inactive", !showLetter);
       drawGuide();
@@ -573,7 +571,7 @@
 
     document.getElementById("startAgainBtn").onclick = () => {
       completedLetters.clear();
-      completedContainer.innerHTML = '<div class="empty-state">لم تكمل أي حروف بعد</div>';
+      completedContainer.innerHTML = '<div class="empty-state">No letters completed yet</div>';
       size = 250;
       document.getElementById("sizeSlider").value = size;
       document.getElementById("sizeLabel").textContent = size;
