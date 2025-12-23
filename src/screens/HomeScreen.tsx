@@ -50,6 +50,12 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     fetchProgress();
   }, []);
 
+  // Calculate actual progress for each module
+  const tracingProgress = progress?.tracingCompleted ? progress.tracingCompleted.length / 28 : 0; // 28 Arabic letters
+  const pronunciationProgress = progress?.pronunciationScore ? progress.pronunciationScore / 100 : 0;
+  const imageMatchProgress = progress?.imageMatchScore ? progress.imageMatchScore / 100 : 0;
+  const quizProgress = progress?.quizScore ? progress.quizScore / 100 : 0;
+
   const gameCards = [
     {
       title: 'Letter Tracing',
@@ -58,7 +64,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       colorDark: Colors.primaryYellowDark,
       route: 'Tracing' as keyof RootStackParamList,
       description: 'Learn to write Arabic letters',
-      progress: 0.45,
+      progress: tracingProgress,
     },
     {
       title: 'Pronunciation',
@@ -67,7 +73,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       colorDark: Colors.primaryBlueDark,
       route: 'Pronunciation' as keyof RootStackParamList,
       description: 'Hear and speak Arabic sounds',
-      progress: 0.80,
+      progress: pronunciationProgress,
     },
     {
       title: 'Image Match',
@@ -76,7 +82,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       colorDark: Colors.primaryPinkDark,
       route: 'ImageMatch' as keyof RootStackParamList,
       description: 'Match words with pictures',
-      progress: 0.60,
+      progress: imageMatchProgress,
     },
     {
       title: 'Quiz Time',
@@ -85,7 +91,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       colorDark: Colors.primaryPurpleDark,
       route: 'Quiz' as keyof RootStackParamList,
       description: 'Test your knowledge',
-      progress: 0.35,
+      progress: quizProgress,
     },
   ];
 
