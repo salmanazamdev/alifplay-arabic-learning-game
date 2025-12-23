@@ -51,7 +51,7 @@ const QuizScreen: React.FC = () => {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
 
-    setTimeout(() => {
+    setTimeout(async () => {
       if (currentQuestion < quizData.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
         setAnswered(false);

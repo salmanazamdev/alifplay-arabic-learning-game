@@ -38,16 +38,18 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       // Initialize default progress
       const defaultProgress: UserProgress = {
         starsEarned: 0,
-          levelsCompleted: [],
-          badges: [],
-          tracingCompleted: [],
-          pronunciationScore: 0,
-          imageMatchScore: 0,
-          quizScore: 0,
-        };
-        setProgress(defaultProgress);
-      }
-    };
+        levelsCompleted: [],
+        badges: [],
+        tracingCompleted: [],
+        pronunciationScore: 0,
+        imageMatchScore: 0,
+        quizScore: 0,
+      };
+      setProgress(defaultProgress);
+    }
+  }, []);
+
+  useEffect(() => {
     fetchProgress();
   }, [fetchProgress]);
 
