@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Edit3, Volume2, Image as ImageIcon, Target, Menu, User } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
@@ -28,15 +29,15 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    const fetchProgress = async () => {
-      const data = await loadProgress();
-      if (data) {
-        setProgress(data);
-      } else {
-        // Initialize default progress
-        const defaultProgress: UserProgress = {
-          starsEarned: 0,
+  const fetchProgress = useCallback(async () => {
+    const data = await loadProgress();
+    console.log('Loaded progress:', data);
+    if (data) {
+      setProgress(data);
+    } else {
+      // Initialize default progress
+      const defaultProgress: UserProgress = {
+        starsEarned: 0,
           levelsCompleted: [],
           badges: [],
           tracingCompleted: [],
@@ -48,7 +49,13 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       }
     };
     fetchProgress();
-  }, []);
+  }, [fetchProgress]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchProgress();
+    }, [fetchProgress])
+  );
 
   // Calculate actual progress for each module
   const tracingProgress = progress?.tracingCompleted ? progress.tracingCompleted.length / 28 : 0; // 28 Arabic letters

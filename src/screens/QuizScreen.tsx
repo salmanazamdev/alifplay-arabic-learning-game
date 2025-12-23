@@ -15,7 +15,7 @@ import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '..
 import { ProgressBar } from '../components';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
-import { addStar } from '../utils/storage';
+import { loadProgress, saveProgress } from '../utils/storage';
 import { 
   generateQuizQuestions, 
   calculateQuizScore, 
@@ -66,7 +66,13 @@ const QuizScreen: React.FC = () => {
         setQuizStars(stars);
         setShowComplete(true);
         
-        addStar(stars);
+        // Save progress
+        const currentProgress = await loadProgress();
+        if (currentProgress) {
+          currentProgress.quizScore = Math.max(currentProgress.quizScore || 0, percentage);
+          currentProgress.starsEarned = (currentProgress.starsEarned || 0) + stars;
+          await saveProgress(currentProgress);
+        }
         
         Animated.spring(modalAnim, {
           toValue: 1,

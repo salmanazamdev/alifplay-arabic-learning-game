@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '..
 import { StatBadge, GradientCard } from '../components';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
+import { loadProgress, saveProgress } from '../utils/storage';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - Spacing.screenPadding * 2 - Spacing.md) / 2;
@@ -24,10 +25,33 @@ const PronunciationScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playingAnimation] = useState(new Animated.Value(1));
+  const [listenedLetters, setListenedLetters] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Load listened letters from progress
+    loadProgress().then(progress => {
+      if (progress?.tracingCompleted) {
+        setListenedLetters(new Set(progress.tracingCompleted));
+      }
+    });
+  }, []);
 
   const handleLetterPress = useCallback(async (letter: typeof arabicLetters[0]) => {
     setSelectedId(letter.id);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Track listened letters
+    const newListenedLetters = new Set(listenedLetters);
+    newListenedLetters.add(letter.id);
+    setListenedLetters(newListenedLetters);
+    
+    // Save progress
+    const currentProgress = await loadProgress();
+    if (currentProgress) {
+      const pronunciationPercentage = (newListenedLetters.size / arabicLetters.length) * 100;
+      currentProgress.pronunciationScore = Math.max(currentProgress.pronunciationScore || 0, pronunciationPercentage);
+      await saveProgress(currentProgress);
+    }
     
     // Audio wave animation
     Animated.sequence([
@@ -48,7 +72,7 @@ const PronunciationScreen: React.FC = () => {
     setTimeout(() => {
       setSelectedId(null);
     }, 600);
-  }, [playingAnimation]);
+  }, [playingAnimation, listenedLetters]);
 
   const renderLetter = useCallback(({ item, index }: { item: typeof arabicLetters[0]; index: number }) => {
     const isSelected = selectedId === item.id;

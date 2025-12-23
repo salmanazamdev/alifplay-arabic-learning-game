@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { ProgressBar, GradientButton } from '../components';
 import { imageMatchData } from '../utils/gameData';
-import { addStar } from '../utils/storage';
+import { loadProgress, saveProgress } from '../utils/storage';
 
 const ITEMS_PER_LEVEL = 3;
 const TOTAL_LEVELS = Math.ceil(imageMatchData.length / ITEMS_PER_LEVEL);
@@ -129,7 +129,15 @@ const ImageMatchScreen: React.FC = () => {
     const stars = mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1;
     setLevelStars(stars);
     setTotalStars(totalStars + stars);
-    await addStar(stars);
+    
+    // Save progress - calculate percentage based on current level
+    const progressPercentage = ((currentLevel) / TOTAL_LEVELS) * 100;
+    const currentProgress = await loadProgress();
+    if (currentProgress) {
+      currentProgress.imageMatchScore = Math.max(currentProgress.imageMatchScore || 0, progressPercentage);
+      currentProgress.starsEarned = (currentProgress.starsEarned || 0) + stars;
+      await saveProgress(currentProgress);
+    }
     
     // Show modal
     setShowLevelComplete(true);
