@@ -27,6 +27,11 @@
       "package": "com.salmanazam.alifplay",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4d4a6ec4-6ae8-4112-9b80-bea35f0a036a"
+      }
     }
   }
 }
