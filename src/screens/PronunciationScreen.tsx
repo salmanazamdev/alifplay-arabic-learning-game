@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { StatBadge, GradientCard } from '../components';
+import { PronunciationPracticeModal } from '../components/PronunciationPracticeModal';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
 import { loadProgress, saveProgress } from '../utils/storage';
@@ -26,6 +27,8 @@ const PronunciationScreen: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playingAnimation] = useState(new Animated.Value(1));
   const [listenedLetters, setListenedLetters] = useState<Set<string>>(new Set());
+  const [practiceModalVisible, setPracticeModalVisible] = useState(false);
+  const [selectedLetter, setSelectedLetter] = useState<typeof arabicLetters[0] | null>(null);
 
   useEffect(() => {
     // Load listened letters from progress
@@ -74,6 +77,12 @@ const PronunciationScreen: React.FC = () => {
     }, 600);
   }, [playingAnimation, listenedLetters]);
 
+  const handleLetterLongPress = useCallback((letter: typeof arabicLetters[0]) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setSelectedLetter(letter);
+    setPracticeModalVisible(true);
+  }, []);
+
   const renderLetter = useCallback(({ item, index }: { item: typeof arabicLetters[0]; index: number }) => {
     const isSelected = selectedId === item.id;
     
@@ -93,6 +102,7 @@ const PronunciationScreen: React.FC = () => {
         style={styles.letterCard}
         gradientColors={gradient}
         onPress={() => handleLetterPress(item)}
+        onLongPress={() => handleLetterLongPress(item)}
         isSelected={isSelected}
         contentStyle={styles.letterCardContent}
       >
@@ -115,7 +125,7 @@ const PronunciationScreen: React.FC = () => {
         </View>
       </GradientCard>
     );
-  }, [selectedId, handleLetterPress]);
+  }, [selectedId, handleLetterPress, handleLetterLongPress]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -127,6 +137,9 @@ const PronunciationScreen: React.FC = () => {
           <View style={styles.headerLeft}>
             <Text style={styles.title}>Letter Sounds</Text>
             <Text style={styles.subtitle}>Perfect your Arabic pronunciation</Text>
+            <View style={styles.aiPracticeHint}>
+              <Text style={styles.aiHintText}>💡 Long press any letter for AI practice</Text>
+            </View>
           </View>
           
           <View style={styles.headerRight}>
@@ -158,6 +171,13 @@ const PronunciationScreen: React.FC = () => {
         initialNumToRender={10}
         windowSize={5}
       />
+
+      {/* AI Practice Modal */}
+      <PronunciationPracticeModal
+        visible={practiceModalVisible}
+        onClose={() => setPracticeModalVisible(false)}
+        letter={selectedLetter}
+      />
     </View>
   );
 };
@@ -180,6 +200,19 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
+  },
+  aiPracticeHint: {
+    marginTop: Spacing.sm,
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
+    alignSelf: 'flex-start',
+  },
+  aiHintText: {
+    fontSize: 12,
+    fontWeight: FontWeight.semibold,
+    color: Colors.primaryBlue,
   },
   title: {
     fontSize: 28,

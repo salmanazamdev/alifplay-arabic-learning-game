@@ -3,3 +3,7 @@ export { default as ProgressBar } from './ProgressBar';
 export { default as StatBadge } from './StatBadge';
 export { default as GradientCard } from './GradientCard';
 export { default as ErrorBoundary } from './ErrorBoundary';
+export { SpeechButton } from './SpeechButton';
+export { AccuracyMeter } from './AccuracyMeter';
+export { PronunciationPracticeModal } from './PronunciationPracticeModal';
+
