@@ -49,6 +49,16 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
   const [showScore, setShowScore] = useState(false);
   const [attemptHistory, setAttemptHistory] = useState<PronunciationScore[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
+  useEffect(() => {
+    // Check if voice is available
+    const checkVoice = async () => {
+      const available = speechRecognitionService.isVoiceAvailable();
+      setIsDemoMode(!available);
+    };
+    checkVoice();
+  }, []);
 
   useEffect(() => {
     // Reset state when modal opens/closes
@@ -195,6 +205,19 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
             <Text style={styles.letterName}>{letter.name}</Text>
             <Text style={styles.letterPronunciation}>"{letter.pronunciation}"</Text>
           </View>
+
+          {/* Demo Mode Banner */}
+          {isDemoMode && (
+            <View style={styles.demoBanner}>
+              <Text style={styles.demoIcon}>🎭</Text>
+              <View style={styles.demoTextContainer}>
+                <Text style={styles.demoTitle}>Demo Mode Active</Text>
+                <Text style={styles.demoText}>
+                  Speech recognition unavailable. The AI will simulate scoring based on the expected pronunciation.
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* Instructions */}
           <View style={styles.instructionsCard}>
@@ -354,6 +377,35 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     color: Colors.textSecondary,
     marginTop: 5,
+  },
+  demoBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF3CD',
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFC107',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: 20,
+    alignItems: 'center',
+    ...Shadows.small,
+  },
+  demoIcon: {
+    fontSize: 32,
+    marginRight: Spacing.sm,
+  },
+  demoTextContainer: {
+    flex: 1,
+  },
+  demoTitle: {
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+    color: '#856404',
+    marginBottom: 4,
+  },
+  demoText: {
+    fontSize: 13,
+    color: '#856404',
+    lineHeight: 18,
   },
   instructionsCard: {
     backgroundColor: Colors.white,

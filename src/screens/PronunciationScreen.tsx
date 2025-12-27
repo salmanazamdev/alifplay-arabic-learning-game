@@ -98,32 +98,43 @@ const PronunciationScreen: React.FC = () => {
     const gradient = gradients[index % gradients.length];
     
     return (
-      <GradientCard
-        style={styles.letterCard}
-        gradientColors={gradient}
-        onPress={() => handleLetterPress(item)}
-        onLongPress={() => handleLetterLongPress(item)}
-        isSelected={isSelected}
-        contentStyle={styles.letterCardContent}
-      >
-        <View 
-          style={styles.audioIconContainer}
-          accessible={false}
+      <View style={styles.letterCard}>
+        <GradientCard
+          style={styles.letterCardInner}
+          gradientColors={gradient}
+          onPress={() => handleLetterPress(item)}
+          isSelected={isSelected}
+          contentStyle={styles.letterCardContent}
         >
-          <Text style={styles.audioIcon}>🔊</Text>
-        </View>
-        <Text 
-          style={styles.letterText}
-          accessible={true}
-          accessibilityLabel={`Arabic letter ${item.name}, pronounced ${item.pronunciation}`}
+          <View 
+            style={styles.audioIconContainer}
+            accessible={false}
+          >
+            <Text style={styles.audioIcon}>🔊</Text>
+          </View>
+          <Text 
+            style={styles.letterText}
+            accessible={true}
+            accessibilityLabel={`Arabic letter ${item.name}, pronounced ${item.pronunciation}`}
+          >
+            {item.letter}
+          </Text>
+          <View style={styles.letterInfo}>
+            <Text style={styles.letterLabel}>{item.name}</Text>
+            <Text style={styles.letterPronunciation}>"{item.pronunciation}"</Text>
+          </View>
+        </GradientCard>
+        
+        {/* AI Practice Button */}
+        <TouchableOpacity 
+          style={styles.aiPracticeButton}
+          onPress={() => handleLetterLongPress(item)}
+          activeOpacity={0.8}
         >
-          {item.letter}
-        </Text>
-        <View style={styles.letterInfo}>
-          <Text style={styles.letterLabel}>{item.name}</Text>
-          <Text style={styles.letterPronunciation}>"{item.pronunciation}"</Text>
-        </View>
-      </GradientCard>
+          <Text style={styles.aiButtonIcon}>🎤</Text>
+          <Text style={styles.aiButtonText}>AI Practice</Text>
+        </TouchableOpacity>
+      </View>
     );
   }, [selectedId, handleLetterPress, handleLetterLongPress]);
 
@@ -136,10 +147,7 @@ const PronunciationScreen: React.FC = () => {
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <Text style={styles.title}>Letter Sounds</Text>
-            <Text style={styles.subtitle}>Perfect your Arabic pronunciation</Text>
-            <View style={styles.aiPracticeHint}>
-              <Text style={styles.aiHintText}>💡 Long press any letter for AI practice</Text>
-            </View>
+            <Text style={styles.subtitle}>Tap to listen • Use AI Practice to test yourself!</Text>
           </View>
           
           <View style={styles.headerRight}>
@@ -201,19 +209,6 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
-  aiPracticeHint: {
-    marginTop: Spacing.sm,
-    backgroundColor: 'rgba(74, 144, 226, 0.1)',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.md,
-    alignSelf: 'flex-start',
-  },
-  aiHintText: {
-    fontSize: 12,
-    fontWeight: FontWeight.semibold,
-    color: Colors.primaryBlue,
-  },
   title: {
     fontSize: 28,
     fontWeight: FontWeight.extrabold,
@@ -270,15 +265,39 @@ const styles = StyleSheet.create({
   },
   row: {
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   letterCard: {
     width: CARD_WIDTH,
+    marginBottom: Spacing.sm,
+  },
+  letterCardInner: {
+    width: '100%',
   },
   letterCardContent: {
     alignItems: 'center',
-    minHeight: 160,
+    minHeight: 140,
     justifyContent: 'space-between',
+  },
+  aiPracticeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.xs,
+    ...Shadows.small,
+    gap: 4,
+  },
+  aiButtonIcon: {
+    fontSize: 14,
+  },
+  aiButtonText: {
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    color: Colors.primaryBlue,
   },
   audioIconContainer: {
     width: 32,
