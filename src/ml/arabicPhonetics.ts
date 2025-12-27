@@ -36,7 +36,7 @@ export const arabicPhoneticMap: Record<string, PhoneticVariation> = {
   'ث': {
     primary: 'thaa',
     variations: ['tha', 'thah', 'the', 'theh', 'sa'],
-    commonMispronunciations: ['ta', 'sa', 'fa'],
+    commonMispronunciations: ['ta', 'za', 'fa'],
     weight: 0.85,
   },
   'ج': {
@@ -60,19 +60,19 @@ export const arabicPhoneticMap: Record<string, PhoneticVariation> = {
   'د': {
     primary: 'daal',
     variations: ['da', 'dah', 'de', 'dal'],
-    commonMispronunciations: ['ta', 'dal'],
+    commonMispronunciations: ['ta', 'dul'],
     weight: 0.9,
   },
   'ذ': {
     primary: 'dhaal',
-    variations: ['dha', 'dhah', 'the', 'zal', 'thal'],
+    variations: ['dha', 'dhah', 'the', 'zal', 'thal', 'zaal'],
     commonMispronunciations: ['da', 'za', 'tha'],
     weight: 0.85,
   },
   'ر': {
     primary: 'raa',
     variations: ['ra', 'rah', 're', 'reh', 'rrr'],
-    commonMispronunciations: ['ar', 'rah'],
+    commonMispronunciations: ['ar', 'ruh'],
     weight: 0.9,
   },
   'ز': {
@@ -89,26 +89,26 @@ export const arabicPhoneticMap: Record<string, PhoneticVariation> = {
   },
   'ش': {
     primary: 'sheen',
-    variations: ['sha', 'shah', 'she', 'sheh', 'shin'],
+    variations: ['sha', 'shah', 'she', 'sheh', 'shin', 'sheen'],
     commonMispronunciations: ['sa', 'cha', 'shee'],
     weight: 0.9,
   },
   'ص': {
     primary: 'saad',
-    variations: ['sa', 'saa', 'sod', 'ssaa'],
-    commonMispronunciations: ['sad', 'sa'],
+    variations: ['sa', 'saa', 'sod', 'ssaa', 'sad', 'swad', 'swaad'],
+    commonMispronunciations: ['sud', 'sa'],
     weight: 0.85,
   },
   'ض': {
     primary: 'daad',
-    variations: ['da', 'daa', 'dod', 'ddaa'],
-    commonMispronunciations: ['dad', 'da'],
+    variations: ['da', 'daa', 'dod', 'ddaa', 'dad', 'dwad', 'dwaad', 'zwad', 'zwaad'],
+    commonMispronunciations: ['dud', 'da', 'za'],
     weight: 0.85,
   },
   'ط': {
     primary: 'taa',
-    variations: ['ta', 'taa', 'toh', 'ttaa'],
-    commonMispronunciations: ['ta', 'tah'],
+    variations: ['ta', 'taa', 'toh', 'ttaa', 'tah'],
+    commonMispronunciations: ['tuu', 'tui', 'da'],
     weight: 0.85,
   },
   'ظ': {
@@ -120,7 +120,7 @@ export const arabicPhoneticMap: Record<string, PhoneticVariation> = {
   'ع': {
     primary: 'ayn',
     variations: ['ay', 'ayn', 'ein', 'aa', 'a'],
-    commonMispronunciations: ['ain', 'an', 'aah'],
+    commonMispronunciations: ['aun', 'an', 'aah'],
     weight: 0.8,
   },
   'غ': {
