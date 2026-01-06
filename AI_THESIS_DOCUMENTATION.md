@@ -151,25 +151,35 @@ These weights were empirically determined through extensive testing (see Section
 #### 5.8.2 Implementation Details
 
 **Technology Stack:**
-- **Speech Recognition**: @react-native-voice/voice v3.x
-- **Text-to-Speech**: expo-speech v11.x
-- **Processing**: TypeScript with native performance optimization
-- **Storage**: AsyncStorage for progress tracking
+- **Speech Recognition**: @react-native-voice/voice v3.1.5
+- **Text-to-Speech**: expo-speech v14.0.8  
+- **Processing**: TypeScript v5.9.2 with native performance optimization
+- **Storage**: @react-native-async-storage/async-storage v2.2.0 for progress tracking
+- **Framework**: Expo SDK 54.0.25 with React Native 0.81.5
 
 **Code Structure:**
 ```
 src/
 ├── ml/                          # Machine Learning Module
-│   ├── arabicPhonetics.ts       # 28 letters, 200+ variations
-│   ├── phoneticAnalyzer.ts      # ML algorithms (450 lines)
-│   ├── testSuite.ts             # Test framework (25+ cases)
-│   └── README.md                # Technical documentation
+│   ├── arabicPhonetics.ts       # 28 letters, 229 lines, phonetic database
+│   ├── phoneticAnalyzer.ts      # ML algorithms (319 lines, 4 core algorithms)
+│   └── testSuite.ts             # Test framework (comprehensive test cases)
 ├── services/
-│   └── speechRecognition.ts    # Speech service (350 lines)
-└── components/
-    ├── SpeechButton.tsx         # Microphone UI (150 lines)
-    ├── AccuracyMeter.tsx        # Score display (200 lines)
-    └── PronunciationPracticeModal.tsx  # Practice interface (400 lines)
+│   └── speechRecognition.ts    # Speech service integration
+├── components/
+│   ├── SpeechButton.tsx         # Microphone UI control
+│   ├── AccuracyMeter.tsx        # Visual score display
+│   └── PronunciationPracticeModal.tsx  # Complete practice interface
+├── screens/
+│   ├── PronunciationScreen.tsx  # Main pronunciation module
+│   ├── TracingScreen.tsx        # Letter tracing with SVG
+│   ├── ImageMatchScreen.tsx     # Image matching game
+│   ├── QuizScreen.tsx           # Interactive quiz
+│   └── HomeScreen.tsx           # Dashboard with progress tracking
+└── utils/
+    ├── gameData.ts              # 28 Arabic letters data
+    ├── audio.ts                 # Audio playback management
+    └── storage.ts               # Progress persistence
 ```
 
 **Performance Optimizations:**
@@ -421,12 +431,11 @@ interface PhoneticVariation {
 ## Summary Statistics for Abstract
 
 **AI Module Contributions:**
-- **Lines of Code**: 1,550+ lines (ML algorithms, services, UI)
-- **Algorithms Implemented**: 4 core ML algorithms
-- **Test Coverage**: 25 automated test cases, 100% pass rate
-- **Performance**: 35ms average processing time, 92% accuracy
-- **User Testing**: 30 children, 840 pronunciations analyzed
-- **Improvement**: 16.3% accuracy increase over 5 sessions
-- **Technology**: On-device ML, zero API costs, offline-capable
-- **Innovation**: First Arabic pronunciation assessment for mobile with real-time ML feedback
+- **Lines of Code**: ~900+ lines (ML algorithms: 548 lines in arabicPhonetics.ts & phoneticAnalyzer.ts, plus services & UI)
+- **Algorithms Implemented**: 4 core ML algorithms (Levenshtein Distance, Phonetic Encoding, Substring Matching, Consonant Extraction)
+- **Phonetic Database**: 28 Arabic letters with complete phonetic variation mappings (229 lines)
+- **Algorithm Implementation**: 319 lines with O(m×n) complexity phonetic analysis
+- **Performance**: 35ms average processing time per pronunciation
+- **Technology**: On-device ML using @react-native-voice/voice v3.1.5, zero API costs, offline-capable
+- **Innovation**: Optional AI-powered pronunciation assessment integrated with gamified learning experience
 
