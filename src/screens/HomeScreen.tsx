@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Edit3, Volume2, Image as ImageIcon, Target, Menu, User } from 'lucide-react-native';
+import { Edit3, Volume2, Image as ImageIcon, Target } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { loadProgress, UserProgress } from '../utils/storage';
@@ -119,16 +119,6 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        {/* Top Bar */}
-        <View style={styles.topBar}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Menu color={Colors.white} size={28} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <User color={Colors.white} size={28} />
-          </TouchableOpacity>
-        </View>
-
         {/* Title */}
         <Text style={styles.title}>AlifPlay</Text>
         <Text style={styles.subtitle}>Master the Arabic Alphabet</Text>
@@ -230,20 +220,6 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
     borderBottomLeftRadius: BorderRadius.xxl,
     borderBottomRightRadius: BorderRadius.xxl,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   title: {
     fontSize: 40,
