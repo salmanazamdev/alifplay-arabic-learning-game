@@ -15,7 +15,7 @@ export interface PhoneticVariation {
  * Includes multiple dialects and child pronunciation variations
  */
 export const arabicPhoneticMap: Record<string, PhoneticVariation> = {
-  'أ': {
+  'ا': {
     primary: 'alif',
     variations: ['a', 'aa', 'ah', 'aaa', 'alef', 'elif'],
     commonMispronunciations: ['al', 'alf', 'alfa'],
