@@ -140,11 +140,8 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      await speechRecognitionService.playCorrectPronunciation(letter.letter);
-      // Also play the original audio file
-      setTimeout(() => {
-        playSound(letter.audioFile);
-      }, 800);
+      // Play the original audio file only
+      await playSound(letter.audioFile);
     } catch (error) {
       console.error('Play pronunciation error:', error);
     }
