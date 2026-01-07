@@ -15,7 +15,6 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { SpeechButton } from './SpeechButton';
 import { AccuracyMeter } from './AccuracyMeter';
@@ -178,10 +177,6 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
           colors={[Colors.primaryBlue, Colors.primaryBlueDark]}
           style={styles.header}
         >
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <X size={28} color="#FFF" />
-          </TouchableOpacity>
-          
           <Text style={styles.headerTitle}>Practice Pronunciation</Text>
           <Text style={styles.headerSubtitle}>with AI Speech Recognition</Text>
         </LinearGradient>
@@ -314,19 +309,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenPadding,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-    position: 'relative',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.small,
   },
   headerTitle: {
     fontSize: 28,
