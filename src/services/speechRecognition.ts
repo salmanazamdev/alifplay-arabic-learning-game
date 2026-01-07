@@ -52,7 +52,14 @@ class SpeechRecognitionService {
   private async initializeVoice() {
     try {
       // Check if Voice module is available
-      if (Voice && typeof Voice.isAvailable === 'function') {
+      if (!Voice || Voice === null) {
+        console.warn('[SpeechRecognition] Voice module is null - using demo mode');
+        this.voiceAvailable = false;
+        this.isInitialized = true;
+        return;
+      }
+      
+      if (typeof Voice.isAvailable === 'function') {
         const available = await Voice.isAvailable();
         this.voiceAvailable = available === 1 || available === true;
         
@@ -80,6 +87,11 @@ class SpeechRecognitionService {
    */
   private setupVoiceListeners() {
     try {
+      if (!Voice || Voice === null) {
+        console.warn('[SpeechRecognition] Cannot setup listeners - Voice is null');
+        return;
+      }
+      
       Voice.onSpeechStart = this.onSpeechStart;
       Voice.onSpeechEnd = this.onSpeechEnd;
       Voice.onSpeechResults = this.onSpeechResults;
