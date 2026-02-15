@@ -19,7 +19,7 @@ import { arabicLetters } from '../utils/gameData';
 import { getArabicTemplate } from '../utils/tracing/arabicTemplates';
 import { validateArabicTrace } from '../utils/tracing/validator';
 import { TracePoint } from '../utils/tracing/types';
-import { loadProgress, saveProgress, UserProgress } from '../utils/storage';
+import { loadProgress, saveProgress, UserProgress, DEFAULT_PROGRESS } from '../utils/storage';
 
 const { width } = Dimensions.get('window');
 const CANVAS_WIDTH = width - Spacing.screenPadding * 2;
@@ -33,6 +33,8 @@ const TracingScreen: React.FC = () => {
   const [feedback, setFeedback] = useState('Trace the letter and tap Check.');
   const [lastScore, setLastScore] = useState<number | null>(null);
   const [completedCount, setCompletedCount] = useState(0);
+  const [attemptsByLetter, setAttemptsByLetter] = useState<Record<string, number>>({});
+  const [bestScoreByLetter, setBestScoreByLetter] = useState<Record<string, number>>({});
 
   const drawingRef = useRef(false);
   const currentStrokeRef = useRef<TracePoint[]>([]);
@@ -44,6 +46,8 @@ const TracingScreen: React.FC = () => {
     const loadTracingProgress = async () => {
       const progress = await loadProgress();
       setCompletedCount(progress?.tracingCompleted?.length || 0);
+      setAttemptsByLetter(progress?.tracingAttemptsByLetter || {});
+      setBestScoreByLetter(progress?.tracingBestScoreByLetter || {});
     };
 
     loadTracingProgress();
@@ -130,34 +134,44 @@ const TracingScreen: React.FC = () => {
     const result = validateArabicTrace(allStrokes, currentLetter.letter, CANVAS_WIDTH, CANVAS_HEIGHT);
     setLastScore(result.score);
 
+    const progress = (await loadProgress()) || { ...DEFAULT_PROGRESS };
+
+    const currentAttempts = progress.tracingAttemptsByLetter[currentLetter.id] || 0;
+    const updatedAttempts = currentAttempts + 1;
+    progress.tracingAttemptsByLetter[currentLetter.id] = updatedAttempts;
+
+    const previousBest = progress.tracingBestScoreByLetter[currentLetter.id] || 0;
+    if (result.score > previousBest) {
+      progress.tracingBestScoreByLetter[currentLetter.id] = result.score;
+    }
+
     if (result.accepted) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      const progress = (await loadProgress()) || {
-        starsEarned: 0,
-        levelsCompleted: [],
-        badges: [],
-        tracingCompleted: [],
-        pronunciationCompleted: [],
-        pronunciationScore: 0,
-        imageMatchScore: 0,
-        quizScore: 0,
-      } as UserProgress;
 
       if (!progress.tracingCompleted.includes(currentLetter.id)) {
         progress.tracingCompleted.push(currentLetter.id);
-        await saveProgress(progress);
-        setCompletedCount(progress.tracingCompleted.length);
       }
 
-      setFeedback(
-        `Accepted (${result.score}%). Shape ${result.breakdown.shape}% • Coverage ${result.breakdown.coverage}%`
-      );
+      if (result.band === 'great') {
+        setFeedback(
+          `Great! (${result.score}%) Excellent trace. Shape ${result.breakdown.shape}% • Coverage ${result.breakdown.coverage}%`
+        );
+      } else {
+        setFeedback(
+          `Good pass (${result.score}%). Accepted with improvement room.`
+        );
+      }
     } else {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       setFeedback(
         `Try again (${result.score}%). Follow direction and cover full Arabic shape.`
       );
     }
+
+    await saveProgress(progress);
+    setCompletedCount(progress.tracingCompleted.length);
+    setAttemptsByLetter({ ...progress.tracingAttemptsByLetter });
+    setBestScoreByLetter({ ...progress.tracingBestScoreByLetter });
   };
 
   const handleNext = async () => {
@@ -193,6 +207,9 @@ const TracingScreen: React.FC = () => {
             </Text>
           </View>
           <Text style={styles.progressText}>Completed: {completedCount}/{arabicLetters.length}</Text>
+          <Text style={styles.metricsText}>
+            Attempts: {attemptsByLetter[currentLetter.id] || 0} • Best: {bestScoreByLetter[currentLetter.id] || 0}%
+          </Text>
         </View>
 
         <View style={styles.canvasContainer}>
@@ -319,6 +336,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.bodySmall,
     color: Colors.primaryGreenDark,
     fontWeight: FontWeight.bold,
+  },
+  metricsText: {
+    marginTop: Spacing.xs,
+    fontSize: FontSize.caption,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.semibold,
   },
   canvasContainer: {
     width: CANVAS_WIDTH,

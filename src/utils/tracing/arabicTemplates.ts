@@ -28,35 +28,41 @@ const TEMPLATE_MEEM: TracePoint[] = [
 const TEMPLATE_WAW: TracePoint[] = [p(0.74, 0.4), p(0.66, 0.48), p(0.64, 0.58), p(0.7, 0.65), p(0.79, 0.61)];
 const TEMPLATE_YAA: TracePoint[] = [p(0.81, 0.55), p(0.72, 0.52), p(0.62, 0.52), p(0.52, 0.56), p(0.44, 0.63), p(0.35, 0.68)];
 
-const make = (letter: string, points: TracePoint[], expectedDirection: ArabicTraceTemplate['expectedDirection']): ArabicTraceTemplate => ({
+const make = (
+  letter: string,
+  points: TracePoint[],
+  expectedDirection: ArabicTraceTemplate['expectedDirection'],
+  minScore: number = 65
+): ArabicTraceTemplate => ({
   letter,
   points,
   expectedDirection,
+  minScore,
 });
 
 const templateMap: Record<string, ArabicTraceTemplate> = {
-  'ا': make('ا', TEMPLATE_ALIF, 'down'),
+  'ا': make('ا', TEMPLATE_ALIF, 'down', 65),
   'ب': make('ب', TEMPLATE_BOWL, 'rtl'),
   'ت': make('ت', TEMPLATE_BOWL, 'rtl'),
   'ث': make('ث', TEMPLATE_BOWL, 'rtl'),
-  'ج': make('ج', TEMPLATE_LOOP, 'curve'),
-  'ح': make('ح', TEMPLATE_LOOP, 'curve'),
-  'خ': make('خ', TEMPLATE_LOOP, 'curve'),
+  'ج': make('ج', TEMPLATE_LOOP, 'curve', 65),
+  'ح': make('ح', TEMPLATE_LOOP, 'curve', 64),
+  'خ': make('خ', TEMPLATE_LOOP, 'curve', 62),
   'د': make('د', TEMPLATE_ARC, 'rtl'),
   'ذ': make('ذ', TEMPLATE_ARC, 'rtl'),
   'ر': make('ر', TEMPLATE_ARC, 'rtl'),
   'ز': make('ز', TEMPLATE_ARC, 'rtl'),
   'س': make('س', TEMPLATE_TEETH, 'rtl'),
   'ش': make('ش', TEMPLATE_TEETH, 'rtl'),
-  'ص': make('ص', TEMPLATE_WIDE_BOWL, 'rtl'),
-  'ض': make('ض', TEMPLATE_WIDE_BOWL, 'rtl'),
-  'ط': make('ط', TEMPLATE_WIDE_BOWL, 'rtl'),
-  'ظ': make('ظ', TEMPLATE_WIDE_BOWL, 'rtl'),
-  'ع': make('ع', TEMPLATE_AIN, 'curve'),
-  'غ': make('غ', TEMPLATE_AIN, 'curve'),
+  'ص': make('ص', TEMPLATE_WIDE_BOWL, 'rtl', 63),
+  'ض': make('ض', TEMPLATE_WIDE_BOWL, 'rtl', 63),
+  'ط': make('ط', TEMPLATE_WIDE_BOWL, 'rtl', 63),
+  'ظ': make('ظ', TEMPLATE_WIDE_BOWL, 'rtl', 62),
+  'ع': make('ع', TEMPLATE_AIN, 'curve', 62),
+  'غ': make('غ', TEMPLATE_AIN, 'curve', 62),
   'ف': make('ف', TEMPLATE_FAA, 'rtl'),
-  'ق': make('ق', TEMPLATE_FAA, 'rtl'),
-  'ك': make('ك', TEMPLATE_KAF, 'rtl'),
+  'ق': make('ق', TEMPLATE_FAA, 'rtl', 62),
+  'ك': make('ك', TEMPLATE_KAF, 'rtl', 64),
   'ل': make('ل', TEMPLATE_LAM, 'down'),
   'م': make('م', TEMPLATE_MEEM, 'curve'),
   'ن': make('ن', TEMPLATE_BOWL, 'rtl'),

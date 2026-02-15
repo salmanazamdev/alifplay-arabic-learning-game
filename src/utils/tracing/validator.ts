@@ -48,6 +48,7 @@ export const validateArabicTrace = (
     return {
       score: 0,
       accepted: false,
+      band: 'retry',
       breakdown: { shape: 0, coverage: 0, direction: 0, startEnd: 0 },
     };
   }
@@ -76,9 +77,14 @@ export const validateArabicTrace = (
       startEnd * 0.1
   );
 
+  const minScore = template.minScore ?? 65;
+  const band: 'great' | 'good' | 'retry' =
+    finalScore >= 80 ? 'great' : finalScore >= minScore ? 'good' : 'retry';
+
   return {
     score: finalScore,
-    accepted: finalScore >= 70,
+    accepted: finalScore >= minScore,
+    band,
     breakdown: {
       shape,
       coverage,

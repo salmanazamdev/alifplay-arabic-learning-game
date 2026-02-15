@@ -9,6 +9,7 @@ export interface ArabicTraceTemplate {
   letter: string;
   points: TracePoint[]; // normalized 0..1
   expectedDirection: StrokeDirection;
+  minScore?: number;
 }
 
 export interface TraceValidationBreakdown {
@@ -21,5 +22,6 @@ export interface TraceValidationBreakdown {
 export interface TraceValidationResult {
   score: number;
   accepted: boolean;
+  band: 'great' | 'good' | 'retry';
   breakdown: TraceValidationBreakdown;
 }

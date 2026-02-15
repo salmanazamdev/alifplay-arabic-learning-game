@@ -5,6 +5,8 @@ export interface UserProgress {
   levelsCompleted: string[];
   badges: string[];
   tracingCompleted: string[];
+  tracingBestScoreByLetter: Record<string, number>;
+  tracingAttemptsByLetter: Record<string, number>;
   pronunciationCompleted: string[];
   pronunciationScore: number;
   imageMatchScore: number;
@@ -18,6 +20,8 @@ export const DEFAULT_PROGRESS: UserProgress = {
   levelsCompleted: [],
   badges: [],
   tracingCompleted: [],
+  tracingBestScoreByLetter: {},
+  tracingAttemptsByLetter: {},
   pronunciationCompleted: [],
   pronunciationScore: 0,
   imageMatchScore: 0,
@@ -44,6 +48,8 @@ export const loadProgress = async (): Promise<UserProgress | null> => {
       levelsCompleted: parsed.levelsCompleted || [],
       badges: parsed.badges || [],
       tracingCompleted: parsed.tracingCompleted || [],
+      tracingBestScoreByLetter: parsed.tracingBestScoreByLetter || {},
+      tracingAttemptsByLetter: parsed.tracingAttemptsByLetter || {},
       pronunciationCompleted: parsed.pronunciationCompleted || [],
     };
   } catch (error) {
