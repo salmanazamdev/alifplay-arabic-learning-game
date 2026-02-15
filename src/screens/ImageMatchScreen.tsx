@@ -7,17 +7,76 @@ import {
   Modal,
   Animated,
   StatusBar,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { ProgressBar, GradientButton } from '../components';
-import { imageMatchData } from '../utils/gameData';
+import { imageMatchData, arabicLetters, ImageMatchPair } from '../utils/gameData';
 import { loadProgress, saveProgress } from '../utils/storage';
 
-const ITEMS_PER_LEVEL = 3;
-const TOTAL_LEVELS = Math.ceil(imageMatchData.length / ITEMS_PER_LEVEL);
+const ITEMS_PER_LEVEL = 5;
+const TOTAL_LEVELS = 10;
+const TOTAL_REQUIRED_ITEMS = ITEMS_PER_LEVEL * TOTAL_LEVELS;
+
+const EMOJI_POOL = [
+  '🦁', '🐱', '📚', '🦆', '🐘', '🐟', '☀️', '🌙', '🌸', '🌳',
+  '🍎', '🍌', '🍇', '🍉', '🥕', '🍞', '🥛', '🚗', '🚌', '🚲',
+  '✈️', '🚀', '⚽', '🏀', '🎈', '🎁', '⌚', '💡', '🔑', '📱',
+  '🏠', '🏫', '🏥', '🏞️', '🌊', '⛰️', '🌧️', '❄️', '🔥', '⭐',
+  '🌈', '🧩', '🧸', '🎨', '🎵', '🐪', '🐓', '🐎', '🐝', '🦋',
+];
+
+const UNIQUE_IMAGE_MATCH_DATA: ImageMatchPair[] = (() => {
+  const baseItems = imageMatchData.map((item, index) => ({
+    ...item,
+    id: `base-${index + 1}`,
+  }));
+
+  const letterItems: ImageMatchPair[] = arabicLetters.map((letter, index) => ({
+    id: `letter-${letter.id}`,
+    word: letter.example,
+    image: letter.exampleImage || `example-${letter.id}.png`,
+    audio: letter.audioFile || `${letter.id}.mp3`,
+    emoji: EMOJI_POOL[(index + 10) % EMOJI_POOL.length],
+  }));
+
+  const extraItems: ImageMatchPair[] = [
+    { id: 'extra-1', word: 'تفاحة', image: 'apple.png', audio: 'tuffaha.mp3', emoji: '🍎' },
+    { id: 'extra-2', word: 'موزة', image: 'banana.png', audio: 'mawza.mp3', emoji: '🍌' },
+    { id: 'extra-3', word: 'ساعة', image: 'clock.png', audio: 'saa.mp3', emoji: '⌚' },
+    { id: 'extra-4', word: 'هاتف', image: 'phone.png', audio: 'hatif.mp3', emoji: '📱' },
+    { id: 'extra-5', word: 'مفتاح', image: 'key.png', audio: 'miftah.mp3', emoji: '🔑' },
+    { id: 'extra-6', word: 'قلم', image: 'pen.png', audio: 'qalam.mp3', emoji: '✏️' },
+    { id: 'extra-7', word: 'باب', image: 'door.png', audio: 'bab.mp3', emoji: '🚪' },
+    { id: 'extra-8', word: 'كرسي', image: 'chair.png', audio: 'kursi.mp3', emoji: '🪑' },
+    { id: 'extra-9', word: 'مطر', image: 'rain.png', audio: 'matar.mp3', emoji: '🌧️' },
+    { id: 'extra-10', word: 'ثلج', image: 'snow.png', audio: 'thalj.mp3', emoji: '❄️' },
+    { id: 'extra-11', word: 'نار', image: 'fire.png', audio: 'nar.mp3', emoji: '🔥' },
+    { id: 'extra-12', word: 'نجمة', image: 'star.png', audio: 'najma.mp3', emoji: '⭐' },
+  ];
+
+  const combined = [...baseItems, ...letterItems, ...extraItems];
+  const uniqueByWord: ImageMatchPair[] = combined.filter(
+    (item, index, arr) => arr.findIndex(x => x.word === item.word) === index
+  );
+
+  let fillerIndex = 1;
+  while (uniqueByWord.length < TOTAL_REQUIRED_ITEMS) {
+    uniqueByWord.push({
+      id: `filler-${fillerIndex}`,
+      word: `كلمة ${fillerIndex}`,
+      image: `word-${fillerIndex}.png`,
+      audio: `word-${fillerIndex}.mp3`,
+      emoji: EMOJI_POOL[(fillerIndex + 20) % EMOJI_POOL.length],
+    });
+    fillerIndex += 1;
+  }
+
+  return uniqueByWord.slice(0, TOTAL_REQUIRED_ITEMS);
+})();
 
 const ImageMatchScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -33,7 +92,7 @@ const ImageMatchScreen: React.FC = () => {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [wrongMatch, setWrongMatch] = useState<boolean>(false);
-  const [shuffledImages, setShuffledImages] = useState(imageMatchData);
+  const [shuffledImages, setShuffledImages] = useState<ImageMatchPair[]>([]);
   const [showLevelComplete, setShowLevelComplete] = useState(false);
   const [levelStars, setLevelStars] = useState(0);
   
@@ -44,19 +103,11 @@ const ImageMatchScreen: React.FC = () => {
   // Get current level items
   const getCurrentLevelItems = useCallback(() => {
     const startIdx = (currentLevel - 1) * ITEMS_PER_LEVEL;
-    const endIdx = Math.min(startIdx + ITEMS_PER_LEVEL, imageMatchData.length);
-    return imageMatchData.slice(startIdx, endIdx);
+    const endIdx = startIdx + ITEMS_PER_LEVEL;
+    return UNIQUE_IMAGE_MATCH_DATA.slice(startIdx, endIdx);
   }, [currentLevel]);
 
   const currentLevelItems = getCurrentLevelItems();
-
-  useEffect(() => {
-    // Shuffle images for current level
-    const levelItems = getCurrentLevelItems();
-    setShuffledImages([...levelItems].sort(() => Math.random() - 0.5));
-    setLevelMatches([]);
-    setMistakes(0);
-  }, [currentLevel, getCurrentLevelItems]);
 
   useEffect(() => {
     // Shuffle images for current level
@@ -176,7 +227,7 @@ const ImageMatchScreen: React.FC = () => {
   };
 
   const totalMatches = (currentLevel - 1) * ITEMS_PER_LEVEL + levelMatches.length;
-  const overallProgress = (totalMatches / imageMatchData.length) * 100;
+  const overallProgress = (totalMatches / (TOTAL_LEVELS * ITEMS_PER_LEVEL)) * 100;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -199,13 +250,18 @@ const ImageMatchScreen: React.FC = () => {
         <View style={styles.progressSection}>
           <ProgressBar progress={overallProgress} color={Colors.primaryGreen} />
           <View style={styles.statsRow}>
-            <Text style={styles.statText}>{totalMatches}/{imageMatchData.length} matches</Text>
+            <Text style={styles.statText}>{totalMatches}/{TOTAL_LEVELS * ITEMS_PER_LEVEL} matches</Text>
             <Text style={styles.statText}>⭐ {totalStars} stars</Text>
           </View>
         </View>
       </View>
 
       {/* Game Area */}
+      <ScrollView
+        style={styles.gameScroll}
+        contentContainerStyle={styles.gameScrollContent}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.gameArea}>
         {/* Words Column */}
         <View style={styles.column}>
@@ -292,6 +348,7 @@ const ImageMatchScreen: React.FC = () => {
           ))}
         </View>
       </View>
+      </ScrollView>
 
       {/* Level Complete Modal */}
       <Modal
@@ -435,8 +492,13 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     color: Colors.textSecondary,
   },
-  gameArea: {
+  gameScroll: {
     flex: 1,
+  },
+  gameScrollContent: {
+    paddingBottom: Spacing.xxl * 2,
+  },
+  gameArea: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.md,
