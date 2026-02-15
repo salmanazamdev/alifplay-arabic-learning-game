@@ -5,12 +5,24 @@ export interface UserProgress {
   levelsCompleted: string[];
   badges: string[];
   tracingCompleted: string[];
+  pronunciationCompleted: string[];
   pronunciationScore: number;
   imageMatchScore: number;
   quizScore: number;
 }
 
 const STORAGE_KEY = '@alifplay_progress';
+
+export const DEFAULT_PROGRESS: UserProgress = {
+  starsEarned: 0,
+  levelsCompleted: [],
+  badges: [],
+  tracingCompleted: [],
+  pronunciationCompleted: [],
+  pronunciationScore: 0,
+  imageMatchScore: 0,
+  quizScore: 0,
+};
 
 export const saveProgress = async (progress: UserProgress): Promise<void> => {
   try {
@@ -23,7 +35,17 @@ export const saveProgress = async (progress: UserProgress): Promise<void> => {
 export const loadProgress = async (): Promise<UserProgress | null> => {
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+
+    const parsed = JSON.parse(data) as Partial<UserProgress>;
+    return {
+      ...DEFAULT_PROGRESS,
+      ...parsed,
+      levelsCompleted: parsed.levelsCompleted || [],
+      badges: parsed.badges || [],
+      tracingCompleted: parsed.tracingCompleted || [],
+      pronunciationCompleted: parsed.pronunciationCompleted || [],
+    };
   } catch (error) {
     console.error('Error loading progress:', error);
     return null;

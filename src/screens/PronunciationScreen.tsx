@@ -17,7 +17,7 @@ import { StatBadge, GradientCard } from '../components';
 import { PronunciationPracticeModal } from '../components/PronunciationPracticeModal';
 import { arabicLetters } from '../utils/gameData';
 import { playSound } from '../utils/audio';
-import { loadProgress, saveProgress } from '../utils/storage';
+import { loadProgress, saveProgress, DEFAULT_PROGRESS } from '../utils/storage';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - Spacing.screenPadding * 2 - Spacing.md) / 2;
@@ -33,8 +33,8 @@ const PronunciationScreen: React.FC = () => {
   useEffect(() => {
     // Load listened letters from progress
     loadProgress().then(progress => {
-      if (progress?.tracingCompleted) {
-        setListenedLetters(new Set(progress.tracingCompleted));
+      if (progress?.pronunciationCompleted) {
+        setListenedLetters(new Set(progress.pronunciationCompleted));
       }
     });
   }, []);
@@ -49,12 +49,14 @@ const PronunciationScreen: React.FC = () => {
     setListenedLetters(newListenedLetters);
     
     // Save progress
-    const currentProgress = await loadProgress();
-    if (currentProgress) {
-      const pronunciationPercentage = (newListenedLetters.size / arabicLetters.length) * 100;
-      currentProgress.pronunciationScore = Math.max(currentProgress.pronunciationScore || 0, pronunciationPercentage);
-      await saveProgress(currentProgress);
-    }
+    const currentProgress = (await loadProgress()) || { ...DEFAULT_PROGRESS };
+    const pronunciationCompleted = new Set(currentProgress.pronunciationCompleted || []);
+    pronunciationCompleted.add(letter.id);
+    currentProgress.pronunciationCompleted = Array.from(pronunciationCompleted);
+
+    const pronunciationPercentage = (currentProgress.pronunciationCompleted.length / arabicLetters.length) * 100;
+    currentProgress.pronunciationScore = Math.max(currentProgress.pronunciationScore || 0, pronunciationPercentage);
+    await saveProgress(currentProgress);
     
     // Audio wave animation
     Animated.sequence([

@@ -47,6 +47,31 @@ class SpeechRecognitionService {
   }
 
   /**
+   * Refresh voice availability at runtime
+   */
+  async refreshVoiceAvailability(): Promise<boolean> {
+    try {
+      if (!Voice || Voice === null || typeof Voice.isAvailable !== 'function') {
+        this.voiceAvailable = false;
+        return false;
+      }
+
+      const available = await Voice.isAvailable();
+      this.voiceAvailable = available === 1 || available === true;
+
+      if (this.voiceAvailable) {
+        this.setupVoiceListeners();
+      }
+
+      return this.voiceAvailable;
+    } catch (error) {
+      console.error('[SpeechRecognition] Refresh availability error:', error);
+      this.voiceAvailable = false;
+      return false;
+    }
+  }
+
+  /**
    * Initialize Voice Recognition Service with error handling
    */
   private async initializeVoice() {
@@ -201,7 +226,8 @@ class SpeechRecognitionService {
       }
 
       // Check if Voice API is available
-      if (!this.voiceAvailable) {
+      const availableNow = await this.refreshVoiceAvailability();
+      if (!availableNow) {
         // Fallback: Use demo mode with simulated result
         this.showDemoModeAlert();
         this.simulateRecognition(arabicLetter, onResult);

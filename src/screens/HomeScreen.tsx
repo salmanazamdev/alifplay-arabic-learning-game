@@ -15,7 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Edit3, Volume2, Image as ImageIcon, Target } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
-import { loadProgress, UserProgress } from '../utils/storage';
+import { loadProgress, UserProgress, DEFAULT_PROGRESS } from '../utils/storage';
 
 const { width } = Dimensions.get('window');
 
@@ -35,17 +35,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     if (data) {
       setProgress(data);
     } else {
-      // Initialize default progress
-      const defaultProgress: UserProgress = {
-        starsEarned: 0,
-        levelsCompleted: [],
-        badges: [],
-        tracingCompleted: [],
-        pronunciationScore: 0,
-        imageMatchScore: 0,
-        quizScore: 0,
-      };
-      setProgress(defaultProgress);
+      setProgress(DEFAULT_PROGRESS);
     }
   }, []);
 

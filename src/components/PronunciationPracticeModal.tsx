@@ -51,13 +51,16 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
   const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
-    // Check if voice is available
+    // Re-check voice availability each time modal opens
     const checkVoice = async () => {
-      const available = speechRecognitionService.isVoiceAvailable();
+      const available = await speechRecognitionService.refreshVoiceAvailability();
       setIsDemoMode(!available);
     };
-    checkVoice();
-  }, []);
+
+    if (visible) {
+      checkVoice();
+    }
+  }, [visible]);
 
   useEffect(() => {
     // Reset state when modal opens/closes
