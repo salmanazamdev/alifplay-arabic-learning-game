@@ -21,7 +21,14 @@ interface MemoryCard {
   name: string;
 }
 
-const PAIR_COUNT = 6;
+type GameMode = 'levels' | 'playing' | 'complete';
+
+const LEVELS = [
+  { key: 'beginner', name: 'Beginner', pairs: 3 },
+  { key: 'easy', name: 'Easy', pairs: 4 },
+  { key: 'intermediate', name: 'Intermediate', pairs: 5 },
+  { key: 'advanced', name: 'Advanced', pairs: 6 },
+];
 
 const shuffle = <T,>(arr: T[]): T[] => {
   const copy = [...arr];
@@ -32,8 +39,8 @@ const shuffle = <T,>(arr: T[]): T[] => {
   return copy;
 };
 
-const buildDeck = (): MemoryCard[] => {
-  const base = arabicLetters.slice(0, PAIR_COUNT);
+const buildDeck = (pairCount: number): MemoryCard[] => {
+  const base = arabicLetters.slice(0, pairCount);
   const cards = base.flatMap(letter => [
     { id: `${letter.id}-a`, pairId: letter.id, letter: letter.letter, name: letter.name },
     { id: `${letter.id}-b`, pairId: letter.id, letter: letter.letter, name: letter.name },
@@ -43,38 +50,87 @@ const buildDeck = (): MemoryCard[] => {
 
 const MemoryGameScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const [cards, setCards] = useState<MemoryCard[]>(() => buildDeck());
+  const [mode, setMode] = useState<GameMode>('levels');
+  const [currentLevel, setCurrentLevel] = useState(0);
+  const [unlockedLevel, setUnlockedLevel] = useState(0);
+  const [cards, setCards] = useState<MemoryCard[]>(() => buildDeck(LEVELS[0].pairs));
   const [flippedIds, setFlippedIds] = useState<string[]>([]);
   const [matchedPairIds, setMatchedPairIds] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
   const [locked, setLocked] = useState(false);
   const [bestProgress, setBestProgress] = useState(0);
+  const [bestMovesByLevel, setBestMovesByLevel] = useState<Record<number, number>>({});
 
+  const pairCount = LEVELS[currentLevel].pairs;
   const matchedCount = matchedPairIds.length;
-  const gameProgress = Math.round((matchedCount / PAIR_COUNT) * 100);
-  const isComplete = matchedCount === PAIR_COUNT;
+  const gameProgress = Math.round((matchedCount / pairCount) * 100);
+  const isComplete = matchedCount === pairCount;
 
-  const restartGame = useCallback(async () => {
+  const resetRound = useCallback(async (levelIndex: number) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setCards(buildDeck());
+    setCards(buildDeck(LEVELS[levelIndex].pairs));
     setFlippedIds([]);
     setMatchedPairIds([]);
     setMoves(0);
     setLocked(false);
   }, []);
 
+  const startLevel = useCallback(
+    async (levelIndex: number) => {
+      setCurrentLevel(levelIndex);
+      await resetRound(levelIndex);
+      setMode('playing');
+    },
+    [resetRound]
+  );
+
+  const backToLevels = useCallback(async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setMode('levels');
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       const progress = await loadProgress();
-      setBestProgress(Math.round(progress?.memoryScore || 0));
+      if (!progress) {
+        setBestProgress(0);
+        setUnlockedLevel(0);
+        return;
+      }
+
+      setBestProgress(Math.round(progress.memoryScore || 0));
+
+      const unlockedFromLevels = progress.levelsCompleted.reduce((maxUnlocked, levelId) => {
+        const match = /^memory-level-(\d+)$/.exec(levelId);
+        if (!match) return maxUnlocked;
+        const completedIndex = Number(match[1]) - 1;
+        return Math.max(maxUnlocked, completedIndex + 1);
+      }, 0);
+
+      setUnlockedLevel(Math.min(LEVELS.length - 1, unlockedFromLevels));
     };
     loadData();
   }, []);
 
-  const persistProgress = useCallback(async (nextProgress: number) => {
+  const persistProgress = useCallback(async (nextProgress: number, completedLevelIndex: number) => {
     const progress = (await loadProgress()) || { ...DEFAULT_PROGRESS };
     progress.memoryScore = Math.max(progress.memoryScore || 0, nextProgress);
+
+    const completedLevelId = `memory-level-${completedLevelIndex + 1}`;
+    if (!progress.levelsCompleted.includes(completedLevelId)) {
+      progress.levelsCompleted.push(completedLevelId);
+    }
+
     await saveProgress(progress);
+
+    const unlockedFromLevels = progress.levelsCompleted.reduce((maxUnlocked, levelId) => {
+      const match = /^memory-level-(\d+)$/.exec(levelId);
+      if (!match) return maxUnlocked;
+      const completedIndex = Number(match[1]) - 1;
+      return Math.max(maxUnlocked, completedIndex + 1);
+    }, 0);
+
+    setUnlockedLevel(Math.min(LEVELS.length - 1, unlockedFromLevels));
     setBestProgress(Math.round(progress.memoryScore));
   }, []);
 
@@ -106,11 +162,19 @@ const MemoryGameScreen: React.FC = () => {
         setFlippedIds([]);
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        const nextProgress = Math.round((nextMatched.length / PAIR_COUNT) * 100);
-        await persistProgress(nextProgress);
+        const levelCompletionProgress = Math.round(((currentLevel + 1) / LEVELS.length) * 100);
+        await persistProgress(levelCompletionProgress, currentLevel);
 
-        if (nextMatched.length === PAIR_COUNT) {
+        if (nextMatched.length === pairCount) {
+          setBestMovesByLevel(prev => {
+            const currentBest = prev[currentLevel];
+            if (!currentBest || moves + 1 < currentBest) {
+              return { ...prev, [currentLevel]: moves + 1 };
+            }
+            return prev;
+          });
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setMode('complete');
         }
       } else {
         setLocked(true);
@@ -120,7 +184,7 @@ const MemoryGameScreen: React.FC = () => {
         }, 700);
       }
     }
-  }, [cards, flippedIds, locked, matchedPairIds, persistProgress]);
+  }, [cards, currentLevel, flippedIds, locked, matchedPairIds, moves, pairCount, persistProgress]);
 
   const cardWidth = useMemo(() => '31%' as const, []);
 
@@ -154,6 +218,83 @@ const MemoryGameScreen: React.FC = () => {
     );
   };
 
+  const handleNextLevel = useCallback(async () => {
+    if (currentLevel >= LEVELS.length - 1) return;
+    await startLevel(currentLevel + 1);
+  }, [currentLevel, startLevel]);
+
+  const renderLevelSelection = () => (
+    <View style={styles.levelsContainer}>
+      <Text style={styles.levelsTitle}>Choose Difficulty</Text>
+      <Text style={styles.levelsSubtitle}>Complete each level to unlock the next one</Text>
+
+      {LEVELS.map((level, index) => {
+        const lockedLevel = index > unlockedLevel;
+        const levelBest = bestMovesByLevel[index];
+
+        return (
+          <TouchableOpacity
+            key={level.key}
+            style={[styles.levelCard, lockedLevel && styles.levelCardLocked]}
+            onPress={() => !lockedLevel && startLevel(index)}
+            disabled={lockedLevel}
+            activeOpacity={0.8}
+          >
+            <View>
+              <Text style={[styles.levelName, lockedLevel && styles.levelNameLocked]}>{level.name}</Text>
+              <Text style={[styles.levelMeta, lockedLevel && styles.levelMetaLocked]}>
+                {level.pairs} pairs · {level.pairs * 2} cards
+              </Text>
+              <Text style={[styles.levelMeta, lockedLevel && styles.levelMetaLocked]}>
+                Best moves: {levelBest || '—'}
+              </Text>
+            </View>
+            <Text style={styles.levelAction}>{lockedLevel ? '🔒' : 'Play'}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+
+  const renderGameComplete = () => {
+    const isLastLevel = currentLevel === LEVELS.length - 1;
+    const canGoNext = !isLastLevel && currentLevel + 1 <= unlockedLevel;
+
+    return (
+      <View style={styles.completeContainer}>
+        <Text style={styles.completeTitle}>Level Complete 🎉</Text>
+        <Text style={styles.completeMeta}>{LEVELS[currentLevel].name} • {moves} moves</Text>
+        <Text style={styles.completeMeta}>Overall progress: {bestProgress}%</Text>
+
+        <TouchableOpacity
+          style={styles.restartButton}
+          onPress={() => startLevel(currentLevel)}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.restartText}>Play Again</Text>
+        </TouchableOpacity>
+
+        {canGoNext && (
+          <TouchableOpacity
+            style={[styles.secondaryButton, { backgroundColor: Colors.primaryGreen }]}
+            onPress={handleNextLevel}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.secondaryButtonText}>Next Level</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={backToLevels}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.secondaryButtonText}>Back to Levels</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -165,38 +306,60 @@ const MemoryGameScreen: React.FC = () => {
         end={{ x: 1, y: 1 }}
       >
         <Text style={styles.headerTitle}>Memory Match</Text>
-        <Text style={styles.headerSubtitle}>Find matching Arabic letter pairs</Text>
+        <Text style={styles.headerSubtitle}>
+          {mode === 'playing'
+            ? `${LEVELS[currentLevel].name} · Match Arabic letter pairs`
+            : 'Progressive levels for Arabic letter recognition'}
+        </Text>
       </LinearGradient>
 
-      <View style={styles.content}>
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{gameProgress}%</Text>
-            <Text style={styles.statLabel}>Progress</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{moves}</Text>
-            <Text style={styles.statLabel}>Moves</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{bestProgress}%</Text>
-            <Text style={styles.statLabel}>Best</Text>
-          </View>
-        </View>
+      <View style={[styles.content, { paddingBottom: insets.bottom + Spacing.sm }]}> 
+        {mode === 'levels' && renderLevelSelection()}
 
-        <FlatList
-          data={cards}
-          keyExtractor={item => item.id}
-          renderItem={renderCard}
-          numColumns={3}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={styles.grid}
-          showsVerticalScrollIndicator={false}
-        />
+        {mode === 'playing' && (
+          <>
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{gameProgress}%</Text>
+                <Text style={styles.statLabel}>Level Progress</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{moves}</Text>
+                <Text style={styles.statLabel}>Moves</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{bestProgress}%</Text>
+                <Text style={styles.statLabel}>Overall</Text>
+              </View>
+            </View>
 
-        <TouchableOpacity style={styles.restartButton} onPress={restartGame}>
-          <Text style={styles.restartText}>{isComplete ? 'Play Again' : 'Restart Game'}</Text>
-        </TouchableOpacity>
+            <FlatList
+              data={cards}
+              keyExtractor={item => item.id}
+              renderItem={renderCard}
+              numColumns={3}
+              columnWrapperStyle={styles.row}
+              contentContainerStyle={styles.grid}
+              showsVerticalScrollIndicator={false}
+            />
+
+            <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.xs }]}> 
+              <TouchableOpacity style={styles.secondaryButton} onPress={backToLevels}>
+                <Text style={styles.secondaryButtonText}>Levels</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.restartButton} onPress={() => startLevel(currentLevel)}>
+                <Text style={styles.restartText}>Restart Level</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {mode === 'complete' && (
+          <View style={[styles.completeWrapper, { paddingBottom: insets.bottom + Spacing.sm }]}>
+            {renderGameComplete()}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -230,7 +393,53 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.lg,
-    paddingBottom: Spacing.lg,
+  },
+  levelsContainer: {
+    gap: Spacing.md,
+  },
+  levelsTitle: {
+    fontSize: FontSize.h3,
+    fontWeight: FontWeight.extrabold,
+    color: Colors.text,
+  },
+  levelsSubtitle: {
+    fontSize: FontSize.bodySmall,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.sm,
+  },
+  levelCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    ...Shadows.small,
+  },
+  levelCardLocked: {
+    backgroundColor: Colors.disabledBackground,
+  },
+  levelName: {
+    fontSize: FontSize.h6,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+  },
+  levelNameLocked: {
+    color: Colors.textSecondary,
+  },
+  levelMeta: {
+    marginTop: 2,
+    fontSize: FontSize.caption,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.semibold,
+  },
+  levelMetaLocked: {
+    color: Colors.textLight,
+  },
+  levelAction: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.extrabold,
+    color: Colors.primaryBlueDark,
   },
   statsRow: {
     flexDirection: 'row',
@@ -256,7 +465,7 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
   },
   grid: {
-    paddingBottom: Spacing.lg,
+    paddingBottom: Spacing.md,
     gap: Spacing.sm,
   },
   row: {
@@ -303,8 +512,11 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: FontWeight.bold,
   },
+  footer: {
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
   restartButton: {
-    marginTop: Spacing.md,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.primaryBlue,
     paddingVertical: Spacing.md,
@@ -315,6 +527,41 @@ const styles = StyleSheet.create({
     fontSize: FontSize.body,
     fontWeight: FontWeight.bold,
     color: Colors.white,
+  },
+  secondaryButton: {
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.primaryPurple,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    ...Shadows.small,
+  },
+  secondaryButtonText: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  },
+  completeWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  completeContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    gap: Spacing.sm,
+    ...Shadows.medium,
+  },
+  completeTitle: {
+    fontSize: FontSize.h3,
+    fontWeight: FontWeight.extrabold,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  completeMeta: {
+    fontSize: FontSize.body,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.semibold,
+    textAlign: 'center',
   },
 });
 
