@@ -25,9 +25,9 @@ type GameMode = 'levels' | 'playing' | 'complete';
 
 const LEVELS = [
   { key: 'beginner', name: 'Beginner', pairs: 3 },
-  { key: 'easy', name: 'Easy', pairs: 4 },
-  { key: 'intermediate', name: 'Intermediate', pairs: 5 },
-  { key: 'advanced', name: 'Advanced', pairs: 6 },
+  { key: 'easy', name: 'Easy', pairs: 6 },
+  { key: 'intermediate', name: 'Intermediate', pairs: 9 },
+  { key: 'advanced', name: 'Advanced', pairs: 12 },
 ];
 
 const shuffle = <T,>(arr: T[]): T[] => {
@@ -59,12 +59,24 @@ const MemoryGameScreen: React.FC = () => {
   const [moves, setMoves] = useState(0);
   const [locked, setLocked] = useState(false);
   const [bestProgress, setBestProgress] = useState(0);
+  const [totalStars, setTotalStars] = useState(0);
+  const [latestRoundStars, setLatestRoundStars] = useState(0);
   const [bestMovesByLevel, setBestMovesByLevel] = useState<Record<number, number>>({});
+  const [bestStarsByLevel, setBestStarsByLevel] = useState<Record<number, number>>({});
 
   const pairCount = LEVELS[currentLevel].pairs;
   const matchedCount = matchedPairIds.length;
   const gameProgress = Math.round((matchedCount / pairCount) * 100);
   const isComplete = matchedCount === pairCount;
+  const gridColumns = cards.length <= 12 ? 3 : 4;
+
+  const calculateStars = useCallback((levelPairs: number, moveCount: number) => {
+    const perfectMoves = levelPairs;
+    const efficiency = perfectMoves / Math.max(moveCount, 1);
+    if (efficiency >= 0.85) return 3;
+    if (efficiency >= 0.65) return 2;
+    return 1;
+  }, []);
 
   const resetRound = useCallback(async (levelIndex: number) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -99,6 +111,7 @@ const MemoryGameScreen: React.FC = () => {
       }
 
       setBestProgress(Math.round(progress.memoryScore || 0));
+      setTotalStars(progress.starsEarned || 0);
 
       const unlockedFromLevels = progress.levelsCompleted.reduce((maxUnlocked, levelId) => {
         const match = /^memory-level-(\d+)$/.exec(levelId);
@@ -107,18 +120,42 @@ const MemoryGameScreen: React.FC = () => {
         return Math.max(maxUnlocked, completedIndex + 1);
       }, 0);
 
+      const parsedBestStars = progress.levelsCompleted.reduce((acc, levelId) => {
+        const match = /^memory-stars-(\d+)-(\d)$/.exec(levelId);
+        if (!match) return acc;
+        const levelIndex = Number(match[1]) - 1;
+        const stars = Number(match[2]);
+        const prev = acc[levelIndex] || 0;
+        acc[levelIndex] = Math.max(prev, stars);
+        return acc;
+      }, {} as Record<number, number>);
+
+      setBestStarsByLevel(parsedBestStars);
+
       setUnlockedLevel(Math.min(LEVELS.length - 1, unlockedFromLevels));
     };
     loadData();
   }, []);
 
-  const persistProgress = useCallback(async (nextProgress: number, completedLevelIndex: number) => {
+  const persistProgress = useCallback(async (nextProgress: number, completedLevelIndex: number, starsEarnedThisRound: number) => {
     const progress = (await loadProgress()) || { ...DEFAULT_PROGRESS };
     progress.memoryScore = Math.max(progress.memoryScore || 0, nextProgress);
 
     const completedLevelId = `memory-level-${completedLevelIndex + 1}`;
     if (!progress.levelsCompleted.includes(completedLevelId)) {
       progress.levelsCompleted.push(completedLevelId);
+    }
+
+    const starTokenPattern = new RegExp(`^memory-stars-${completedLevelIndex + 1}-\\d$`);
+    const currentBestStarToken = progress.levelsCompleted.find(levelId => starTokenPattern.test(levelId));
+    const currentBestStars = currentBestStarToken ? Number(currentBestStarToken.slice(-1)) : 0;
+    const improvedStars = Math.max(currentBestStars, starsEarnedThisRound);
+
+    progress.levelsCompleted = progress.levelsCompleted.filter(levelId => !starTokenPattern.test(levelId));
+    progress.levelsCompleted.push(`memory-stars-${completedLevelIndex + 1}-${improvedStars}`);
+
+    if (improvedStars > currentBestStars) {
+      progress.starsEarned += improvedStars - currentBestStars;
     }
 
     await saveProgress(progress);
@@ -132,6 +169,8 @@ const MemoryGameScreen: React.FC = () => {
 
     setUnlockedLevel(Math.min(LEVELS.length - 1, unlockedFromLevels));
     setBestProgress(Math.round(progress.memoryScore));
+    setTotalStars(progress.starsEarned || 0);
+    setBestStarsByLevel(prev => ({ ...prev, [completedLevelIndex]: improvedStars }));
   }, []);
 
   const handleCardPress = useCallback(async (card: MemoryCard) => {
@@ -162,14 +201,18 @@ const MemoryGameScreen: React.FC = () => {
         setFlippedIds([]);
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        const levelCompletionProgress = Math.round(((currentLevel + 1) / LEVELS.length) * 100);
-        await persistProgress(levelCompletionProgress, currentLevel);
-
         if (nextMatched.length === pairCount) {
+          const finalMoves = moves + 1;
+          const earnedStars = calculateStars(pairCount, finalMoves);
+          setLatestRoundStars(earnedStars);
+
+          const levelCompletionProgress = Math.round(((currentLevel + 1) / LEVELS.length) * 100);
+          await persistProgress(levelCompletionProgress, currentLevel, earnedStars);
+
           setBestMovesByLevel(prev => {
             const currentBest = prev[currentLevel];
-            if (!currentBest || moves + 1 < currentBest) {
-              return { ...prev, [currentLevel]: moves + 1 };
+            if (!currentBest || finalMoves < currentBest) {
+              return { ...prev, [currentLevel]: finalMoves };
             }
             return prev;
           });
@@ -184,9 +227,9 @@ const MemoryGameScreen: React.FC = () => {
         }, 700);
       }
     }
-  }, [cards, currentLevel, flippedIds, locked, matchedPairIds, moves, pairCount, persistProgress]);
+  }, [calculateStars, cards, currentLevel, flippedIds, locked, matchedPairIds, moves, pairCount, persistProgress]);
 
-  const cardWidth = useMemo(() => '31%' as const, []);
+  const cardWidth = useMemo<'31%' | '23.5%'>(() => (gridColumns === 3 ? '31%' : '23.5%'), [gridColumns]);
 
   const renderCard = ({ item }: { item: MemoryCard }) => {
     const isFlipped = flippedIds.includes(item.id);
@@ -248,6 +291,9 @@ const MemoryGameScreen: React.FC = () => {
               <Text style={[styles.levelMeta, lockedLevel && styles.levelMetaLocked]}>
                 Best moves: {levelBest || '—'}
               </Text>
+              <Text style={[styles.levelMeta, lockedLevel && styles.levelMetaLocked]}>
+                Best stars: {'⭐'.repeat(bestStarsByLevel[index] || 0) || '—'}
+              </Text>
             </View>
             <Text style={styles.levelAction}>{lockedLevel ? '🔒' : 'Play'}</Text>
           </TouchableOpacity>
@@ -264,7 +310,9 @@ const MemoryGameScreen: React.FC = () => {
       <View style={styles.completeContainer}>
         <Text style={styles.completeTitle}>Level Complete 🎉</Text>
         <Text style={styles.completeMeta}>{LEVELS[currentLevel].name} • {moves} moves</Text>
+        <Text style={styles.completeMeta}>Stars earned: {'⭐'.repeat(latestRoundStars)}</Text>
         <Text style={styles.completeMeta}>Overall progress: {bestProgress}%</Text>
+        <Text style={styles.completeMeta}>Total stars: {totalStars}</Text>
 
         <TouchableOpacity
           style={styles.restartButton}
@@ -328,8 +376,8 @@ const MemoryGameScreen: React.FC = () => {
                 <Text style={styles.statLabel}>Moves</Text>
               </View>
               <View style={styles.statCard}>
-                <Text style={styles.statValue}>{bestProgress}%</Text>
-                <Text style={styles.statLabel}>Overall</Text>
+                <Text style={styles.statValue}>{totalStars}</Text>
+                <Text style={styles.statLabel}>Stars</Text>
               </View>
             </View>
 
@@ -337,8 +385,9 @@ const MemoryGameScreen: React.FC = () => {
               data={cards}
               keyExtractor={item => item.id}
               renderItem={renderCard}
-              numColumns={3}
+              numColumns={gridColumns}
               columnWrapperStyle={styles.row}
+              style={styles.gridList}
               contentContainerStyle={styles.grid}
               showsVerticalScrollIndicator={false}
             />
@@ -468,6 +517,9 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.md,
     gap: Spacing.sm,
   },
+  gridList: {
+    flex: 1,
+  },
   row: {
     justifyContent: 'space-between',
     marginBottom: Spacing.sm,
@@ -514,7 +566,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     gap: Spacing.sm,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.sm,
   },
   restartButton: {
     borderRadius: BorderRadius.lg,
