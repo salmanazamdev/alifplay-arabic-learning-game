@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadows } from '../constants';
 import { arabicLetters } from '../utils/gameData';
@@ -65,6 +65,17 @@ const TracingScreen: React.FC = () => {
   }));
 
   const templatePath = pointsToPath(normalizedTemplateToCanvas);
+  const templateStart = normalizedTemplateToCanvas[0];
+  const templateEnd = normalizedTemplateToCanvas[normalizedTemplateToCanvas.length - 1];
+
+  const directionHint =
+    template.expectedDirection === 'rtl'
+      ? 'Trace from right to left'
+      : template.expectedDirection === 'ltr'
+      ? 'Trace from left to right'
+      : template.expectedDirection === 'down'
+      ? 'Start from top and move down'
+      : 'Follow the curved stroke smoothly';
 
   const getEventPoint = (evt: GestureResponderEvent): TracePoint => ({
     x: Math.max(0, Math.min(CANVAS_WIDTH, evt.nativeEvent.locationX)),
@@ -210,6 +221,7 @@ const TracingScreen: React.FC = () => {
           <Text style={styles.metricsText}>
             Attempts: {attemptsByLetter[currentLetter.id] || 0} • Best: {bestScoreByLetter[currentLetter.id] || 0}%
           </Text>
+          <Text style={styles.directionHintText}>{directionHint}</Text>
         </View>
 
         <View style={styles.canvasContainer}>
@@ -225,6 +237,13 @@ const TracingScreen: React.FC = () => {
               strokeOpacity={0.35}
               fill="none"
             />
+
+            {templateStart && (
+              <Circle cx={templateStart.x} cy={templateStart.y} r={6} fill={Colors.primaryGreenDark} />
+            )}
+            {templateEnd && (
+              <Circle cx={templateEnd.x} cy={templateEnd.y} r={6} fill={Colors.primaryOrangeDark} />
+            )}
 
             {strokes.map((stroke, idx) => (
               <Path
@@ -342,6 +361,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.caption,
     color: Colors.textSecondary,
     fontWeight: FontWeight.semibold,
+  },
+  directionHintText: {
+    marginTop: Spacing.xs,
+    fontSize: FontSize.caption,
+    color: Colors.primaryBlueDark,
+    fontWeight: FontWeight.bold,
   },
   canvasContainer: {
     width: CANVAS_WIDTH,

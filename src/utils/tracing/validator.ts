@@ -14,22 +14,73 @@ const avgDistance = (source: TracePoint[], target: TracePoint[]): number => {
   return total / source.length;
 };
 
+const pathLength = (points: TracePoint[]): number => {
+  if (points.length < 2) return 0;
+  let sum = 0;
+  for (let i = 1; i < points.length; i++) {
+    const dx = points[i].x - points[i - 1].x;
+    const dy = points[i].y - points[i - 1].y;
+    sum += Math.sqrt(dx * dx + dy * dy);
+  }
+  return sum;
+};
+
+const segmentConsistency = (
+  points: TracePoint[],
+  predicate: (dx: number, dy: number) => boolean
+): number => {
+  if (points.length < 2) return 0;
+
+  let total = 0;
+  let matched = 0;
+
+  for (let i = 1; i < points.length; i++) {
+    const dx = points[i].x - points[i - 1].x;
+    const dy = points[i].y - points[i - 1].y;
+    const magnitude = Math.sqrt(dx * dx + dy * dy);
+    if (magnitude < 0.002) continue;
+
+    total += 1;
+    if (predicate(dx, dy)) {
+      matched += 1;
+    }
+  }
+
+  if (total === 0) return 0;
+  return (matched / total) * 100;
+};
+
 const directionScore = (points: TracePoint[], expected: 'rtl' | 'ltr' | 'down' | 'curve'): number => {
   if (points.length < 2) return 0;
   const start = points[0];
   const end = points[points.length - 1];
   const dx = end.x - start.x;
   const dy = end.y - start.y;
+  const length = pathLength(points);
+  const straightDistance = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+  const curvatureRatio = length / straightDistance;
 
   switch (expected) {
-    case 'rtl':
-      return dx < -0.05 ? 100 : dx < 0 ? 75 : 35;
-    case 'ltr':
-      return dx > 0.05 ? 100 : dx > 0 ? 75 : 35;
-    case 'down':
-      return dy > 0.1 ? 100 : dy > 0 ? 70 : 30;
-    case 'curve':
-      return Math.abs(dx) > 0.08 || Math.abs(dy) > 0.08 ? 85 : 55;
+    case 'rtl': {
+      const consistency = segmentConsistency(points, segDx => segDx <= 0.004);
+      const net = dx < -0.12 ? 100 : dx < -0.06 ? 85 : dx < 0 ? 65 : 20;
+      return clampScore(consistency * 0.65 + net * 0.35);
+    }
+    case 'ltr': {
+      const consistency = segmentConsistency(points, segDx => segDx >= -0.004);
+      const net = dx > 0.12 ? 100 : dx > 0.06 ? 85 : dx > 0 ? 65 : 20;
+      return clampScore(consistency * 0.65 + net * 0.35);
+    }
+    case 'down': {
+      const consistency = segmentConsistency(points, (_segDx, segDy) => segDy >= -0.004);
+      const net = dy > 0.2 ? 100 : dy > 0.12 ? 85 : dy > 0.06 ? 70 : 25;
+      return clampScore(consistency * 0.65 + net * 0.35);
+    }
+    case 'curve': {
+      const moving = Math.abs(dx) > 0.06 || Math.abs(dy) > 0.06 ? 100 : 45;
+      const curveShape = curvatureRatio > 1.25 ? 100 : curvatureRatio > 1.12 ? 80 : 55;
+      return clampScore(moving * 0.45 + curveShape * 0.55);
+    }
     default:
       return 60;
   }
