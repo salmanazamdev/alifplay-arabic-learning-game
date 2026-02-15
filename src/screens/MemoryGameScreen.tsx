@@ -58,7 +58,6 @@ const MemoryGameScreen: React.FC = () => {
   const [matchedPairIds, setMatchedPairIds] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
   const [locked, setLocked] = useState(false);
-  const [bestProgress, setBestProgress] = useState(0);
   const [totalStars, setTotalStars] = useState(0);
   const [latestRoundStars, setLatestRoundStars] = useState(0);
   const [bestMovesByLevel, setBestMovesByLevel] = useState<Record<number, number>>({});
@@ -67,7 +66,6 @@ const MemoryGameScreen: React.FC = () => {
   const pairCount = LEVELS[currentLevel].pairs;
   const matchedCount = matchedPairIds.length;
   const gameProgress = Math.round((matchedCount / pairCount) * 100);
-  const isComplete = matchedCount === pairCount;
   const gridColumns = cards.length <= 12 ? 3 : 4;
 
   const calculateStars = useCallback((levelPairs: number, moveCount: number) => {
@@ -105,12 +103,10 @@ const MemoryGameScreen: React.FC = () => {
     const loadData = async () => {
       const progress = await loadProgress();
       if (!progress) {
-        setBestProgress(0);
         setUnlockedLevel(0);
         return;
       }
 
-      setBestProgress(Math.round(progress.memoryScore || 0));
       setTotalStars(progress.starsEarned || 0);
 
       const unlockedFromLevels = progress.levelsCompleted.reduce((maxUnlocked, levelId) => {
@@ -168,7 +164,6 @@ const MemoryGameScreen: React.FC = () => {
     }, 0);
 
     setUnlockedLevel(Math.min(LEVELS.length - 1, unlockedFromLevels));
-    setBestProgress(Math.round(progress.memoryScore));
     setTotalStars(progress.starsEarned || 0);
     setBestStarsByLevel(prev => ({ ...prev, [completedLevelIndex]: improvedStars }));
   }, []);
@@ -266,6 +261,21 @@ const MemoryGameScreen: React.FC = () => {
     await startLevel(currentLevel + 1);
   }, [currentLevel, startLevel]);
 
+  const renderStars = useCallback((count: number) => {
+    return (
+      <View style={styles.starsRow}>
+        {[0, 1, 2].map(index => (
+          <Text
+            key={index}
+            style={[styles.starIcon, index < count ? styles.starIconActive : styles.starIconInactive]}
+          >
+            ★
+          </Text>
+        ))}
+      </View>
+    );
+  }, []);
+
   const renderLevelSelection = () => (
     <View style={styles.levelsContainer}>
       <Text style={styles.levelsTitle}>Choose Difficulty</Text>
@@ -291,9 +301,7 @@ const MemoryGameScreen: React.FC = () => {
               <Text style={[styles.levelMeta, lockedLevel && styles.levelMetaLocked]}>
                 Best moves: {levelBest || '—'}
               </Text>
-              <Text style={[styles.levelMeta, lockedLevel && styles.levelMetaLocked]}>
-                Best stars: {'⭐'.repeat(bestStarsByLevel[index] || 0) || '—'}
-              </Text>
+              <View style={styles.levelStarsWrap}>{renderStars(bestStarsByLevel[index] || 0)}</View>
             </View>
             <Text style={styles.levelAction}>{lockedLevel ? '🔒' : 'Play'}</Text>
           </TouchableOpacity>
@@ -308,11 +316,31 @@ const MemoryGameScreen: React.FC = () => {
 
     return (
       <View style={styles.completeContainer}>
-        <Text style={styles.completeTitle}>Level Complete 🎉</Text>
-        <Text style={styles.completeMeta}>{LEVELS[currentLevel].name} • {moves} moves</Text>
-        <Text style={styles.completeMeta}>Stars earned: {'⭐'.repeat(latestRoundStars)}</Text>
-        <Text style={styles.completeMeta}>Overall progress: {bestProgress}%</Text>
-        <Text style={styles.completeMeta}>Total stars: {totalStars}</Text>
+        <LinearGradient
+          colors={[Colors.primaryPurpleLight, Colors.primaryPurple]}
+          style={styles.completeBadge}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Text style={styles.completeBadgeTitle}>Level Complete</Text>
+          <Text style={styles.completeBadgeSubtitle}>{LEVELS[currentLevel].name}</Text>
+        </LinearGradient>
+
+        <View style={styles.completeStatsRow}>
+          <View style={styles.completeStatCard}>
+            <Text style={styles.completeStatValue}>{moves}</Text>
+            <Text style={styles.completeStatLabel}>Moves</Text>
+          </View>
+          <View style={styles.completeStatCard}>
+            <Text style={styles.completeStatValue}>{totalStars}</Text>
+            <Text style={styles.completeStatLabel}>Total Stars</Text>
+          </View>
+        </View>
+
+        <View style={styles.earnedStarsBlock}>
+          <Text style={styles.completeMeta}>Stars earned this level</Text>
+          {renderStars(latestRoundStars)}
+        </View>
 
         <TouchableOpacity
           style={styles.restartButton}
@@ -361,7 +389,7 @@ const MemoryGameScreen: React.FC = () => {
         </Text>
       </LinearGradient>
 
-      <View style={[styles.content, { paddingBottom: insets.bottom + Spacing.sm }]}> 
+      <View style={styles.content}>
         {mode === 'levels' && renderLevelSelection()}
 
         {mode === 'playing' && (
@@ -376,8 +404,8 @@ const MemoryGameScreen: React.FC = () => {
                 <Text style={styles.statLabel}>Moves</Text>
               </View>
               <View style={styles.statCard}>
-                <Text style={styles.statValue}>{totalStars}</Text>
-                <Text style={styles.statLabel}>Stars</Text>
+                {renderStars(calculateStars(pairCount, Math.max(moves, 1)))}
+                <Text style={styles.statLabel}>Rating</Text>
               </View>
             </View>
 
@@ -392,7 +420,7 @@ const MemoryGameScreen: React.FC = () => {
               showsVerticalScrollIndicator={false}
             />
 
-            <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.xs }]}> 
+            <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.md }]}> 
               <TouchableOpacity style={styles.secondaryButton} onPress={backToLevels}>
                 <Text style={styles.secondaryButtonText}>Levels</Text>
               </TouchableOpacity>
@@ -405,7 +433,7 @@ const MemoryGameScreen: React.FC = () => {
         )}
 
         {mode === 'complete' && (
-          <View style={[styles.completeWrapper, { paddingBottom: insets.bottom + Spacing.sm }]}>
+          <View style={[styles.completeWrapper, { paddingBottom: insets.bottom + Spacing.md }]}>
             {renderGameComplete()}
           </View>
         )}
@@ -485,6 +513,9 @@ const styles = StyleSheet.create({
   levelMetaLocked: {
     color: Colors.textLight,
   },
+  levelStarsWrap: {
+    marginTop: Spacing.xs,
+  },
   levelAction: {
     fontSize: FontSize.body,
     fontWeight: FontWeight.extrabold,
@@ -507,6 +538,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: Colors.primaryBlueDark,
     fontWeight: FontWeight.extrabold,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  starIcon: {
+    fontSize: 18,
+    fontWeight: FontWeight.extrabold,
+  },
+  starIconActive: {
+    color: Colors.primaryYellowDark,
+    opacity: 1,
+  },
+  starIconInactive: {
+    color: Colors.textLight,
+    opacity: 0.35,
   },
   statLabel: {
     fontSize: FontSize.caption,
@@ -566,8 +614,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     gap: Spacing.sm,
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.sm,
+    marginTop: 'auto',
+    paddingTop: Spacing.lg,
   },
   restartButton: {
     borderRadius: BorderRadius.lg,
@@ -601,14 +649,56 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    gap: Spacing.sm,
+    gap: Spacing.md,
     ...Shadows.medium,
   },
-  completeTitle: {
-    fontSize: FontSize.h3,
+  completeBadge: {
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+  },
+  completeBadgeTitle: {
+    fontSize: FontSize.h4,
     fontWeight: FontWeight.extrabold,
-    color: Colors.text,
+    color: Colors.white,
     textAlign: 'center',
+  },
+  completeBadgeSubtitle: {
+    marginTop: 2,
+    fontSize: FontSize.bodySmall,
+    color: Colors.white,
+    opacity: 0.95,
+    fontWeight: FontWeight.semibold,
+  },
+  completeStatsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  completeStatCard: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+  },
+  completeStatValue: {
+    fontSize: FontSize.h5,
+    color: Colors.primaryBlueDark,
+    fontWeight: FontWeight.extrabold,
+  },
+  completeStatLabel: {
+    marginTop: 2,
+    fontSize: FontSize.caption,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.semibold,
+  },
+  earnedStarsBlock: {
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
   },
   completeMeta: {
     fontSize: FontSize.body,
