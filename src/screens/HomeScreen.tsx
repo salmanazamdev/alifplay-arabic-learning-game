@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Edit3, Volume2, Image as ImageIcon, Target } from 'lucide-react-native';
+import { Brain, Volume2, Image as ImageIcon, Target } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { loadProgress, UserProgress, DEFAULT_PROGRESS } from '../utils/storage';
@@ -50,20 +50,20 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   // Calculate actual progress for each module
-  const tracingProgress = progress?.tracingCompleted ? progress.tracingCompleted.length / 28 : 0; // 28 Arabic letters
+  const memoryProgress = progress?.memoryScore ? progress.memoryScore / 100 : 0;
   const pronunciationProgress = progress?.pronunciationScore ? progress.pronunciationScore / 100 : 0;
   const imageMatchProgress = progress?.imageMatchScore ? progress.imageMatchScore / 100 : 0;
   const quizProgress = progress?.quizScore ? progress.quizScore / 100 : 0;
 
   const gameCards = [
     {
-      title: 'Letter Tracing',
-      icon: Edit3,
+      title: 'Memory Match',
+      icon: Brain,
       color: Colors.primaryYellow,
       colorDark: Colors.primaryYellowDark,
-      route: 'Tracing' as keyof RootStackParamList,
-      description: 'Learn to write Arabic letters',
-      progress: tracingProgress,
+      route: 'MemoryGame' as keyof RootStackParamList,
+      description: 'Match Arabic letter pairs',
+      progress: memoryProgress,
     },
     {
       title: 'Pronunciation',
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   subtitle: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.bodyLarge,
     color: Colors.white,
     opacity: 0.95,
     marginBottom: Spacing.xl,
@@ -241,13 +241,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   statValue: {
-    fontSize: FontSize.xl,
+    fontSize: FontSize.h4,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    color: Colors.text,
     marginBottom: 2,
   },
   statLabel: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.bodySmall,
     color: Colors.textSecondary,
     textAlign: 'center',
   },
@@ -264,9 +264,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   sectionTitle: {
-    fontSize: FontSize.xxl,
+    fontSize: FontSize.h3,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    color: Colors.text,
     marginBottom: Spacing.lg,
   },
   cardsGrid: {
@@ -296,12 +296,12 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   gameTitle: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.bodyLarge,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    color: Colors.text,
   },
   gameDescription: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.bodySmall,
     color: Colors.textSecondary,
     marginBottom: Spacing.xs,
   },
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
   },
   progressText: {
-    fontSize: FontSize.xs,
+    fontSize: FontSize.caption,
     fontWeight: FontWeight.semibold,
     color: Colors.textSecondary,
     minWidth: 38,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
   },
   startButtonText: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.bodySmall,
     fontWeight: FontWeight.bold,
     color: Colors.white,
   },

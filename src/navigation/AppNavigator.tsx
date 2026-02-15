@@ -4,7 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import HomeScreen from '../screens/HomeScreen';
 import SplashScreen from '../screens/SplashScreen';
-import TracingScreen from '../screens/TracingScreen';
+import MemoryGameScreen from '../screens/MemoryGameScreen';
 import PronunciationScreen from '../screens/PronunciationScreen';
 import ImageMatchScreen from '../screens/ImageMatchScreen';
 import QuizScreen from '../screens/QuizScreen';
@@ -12,7 +12,7 @@ import QuizScreen from '../screens/QuizScreen';
 export type RootStackParamList = {
   Splash: undefined;
   Home: undefined;
-  Tracing: undefined;
+  MemoryGame: undefined;
   Pronunciation: undefined;
   ImageMatch: undefined;
   Quiz: undefined;
@@ -32,7 +32,7 @@ const AppNavigator: React.FC = () => {
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Tracing" component={TracingScreen} />
+        <Stack.Screen name="MemoryGame" component={MemoryGameScreen} />
         <Stack.Screen name="Pronunciation" component={PronunciationScreen} />
         <Stack.Screen name="ImageMatch" component={ImageMatchScreen} />
         <Stack.Screen name="Quiz" component={QuizScreen} />

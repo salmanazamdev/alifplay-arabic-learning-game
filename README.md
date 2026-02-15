@@ -8,7 +8,7 @@ A beautiful, interactive mobile application built with React Native Expo to help
 1. **Pronunciation Practice** - Learn letter sounds with audio playback
 2. **Quiz Game** - Test knowledge with interactive questions
 3. **Image Match** - Match Arabic words with corresponding images
-4. **Letter Tracing** - Practice writing letters with finger drawing
+4. **Memory Match** - Match pairs of Arabic letters to improve recognition
 
 ### 🎨 Modern Design System
 - **60+ Design Tokens** - Consistent colors, typography, spacing across the app
@@ -53,7 +53,7 @@ AlifPlay/
 │   │   ├── PronunciationScreen.tsx
 │   │   ├── QuizScreen.tsx
 │   │   ├── ImageMatchScreen.tsx
-│   │   ├── TracingScreen.tsx
+│   │   ├── MemoryGameScreen.tsx
 │   │   └── SplashScreen.tsx
 │   ├── navigation/          # React Navigation setup
 │   │   └── AppNavigator.tsx
@@ -76,7 +76,6 @@ AlifPlay/
 - **TypeScript** - Type safety and better DX
 - **React Navigation** - Screen navigation
 - **Expo Google Fonts (Cairo)** - Arabic typography
-- **react-native-svg** - Drawing canvas for tracing
 - **expo-av** - Audio playback
 - **expo-haptics** - Tactile feedback
 - **@react-native-async-storage/async-storage** - Local data persistence
@@ -188,12 +187,12 @@ const styles = StyleSheet.create({
 - Reset functionality
 - Success celebrations
 
-### Letter Tracing
-- SVG-based drawing canvas
-- Faded background guide letter
-- Touch-based drawing with path tracking
-- Clear and complete actions
-- Progress through all 28 letters
+### Memory Match
+- 12-card matching board (6 Arabic letter pairs)
+- Shuffle logic for replay variety
+- Move counting and completion tracking
+- Haptic feedback on flips and matches
+- Best-score persistence across sessions
 
 ## 📱 Screens Overview
 
@@ -201,7 +200,7 @@ const styles = StyleSheet.create({
 2. **Pronunciation Screen** - Audio practice for all letters
 3. **Quiz Screen** - Multiple choice questions
 4. **Image Match Screen** - Word-image matching game
-5. **Tracing Screen** - Letter writing practice
+5. **Memory Game Screen** - Arabic letter pair matching
 6. **Splash Screen** - App loading screen
 
 ## 🔧 Configuration

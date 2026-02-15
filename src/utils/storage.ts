@@ -4,9 +4,7 @@ export interface UserProgress {
   starsEarned: number;
   levelsCompleted: string[];
   badges: string[];
-  tracingCompleted: string[];
-  tracingBestScoreByLetter: Record<string, number>;
-  tracingAttemptsByLetter: Record<string, number>;
+  memoryScore: number;
   pronunciationCompleted: string[];
   pronunciationScore: number;
   imageMatchScore: number;
@@ -19,9 +17,7 @@ export const DEFAULT_PROGRESS: UserProgress = {
   starsEarned: 0,
   levelsCompleted: [],
   badges: [],
-  tracingCompleted: [],
-  tracingBestScoreByLetter: {},
-  tracingAttemptsByLetter: {},
+  memoryScore: 0,
   pronunciationCompleted: [],
   pronunciationScore: 0,
   imageMatchScore: 0,
@@ -42,14 +38,13 @@ export const loadProgress = async (): Promise<UserProgress | null> => {
     if (!data) return null;
 
     const parsed = JSON.parse(data) as Partial<UserProgress>;
+
     return {
       ...DEFAULT_PROGRESS,
       ...parsed,
+      memoryScore: typeof parsed.memoryScore === 'number' ? parsed.memoryScore : 0,
       levelsCompleted: parsed.levelsCompleted || [],
       badges: parsed.badges || [],
-      tracingCompleted: parsed.tracingCompleted || [],
-      tracingBestScoreByLetter: parsed.tracingBestScoreByLetter || {},
-      tracingAttemptsByLetter: parsed.tracingAttemptsByLetter || {},
       pronunciationCompleted: parsed.pronunciationCompleted || [],
     };
   } catch (error) {
