@@ -47,17 +47,40 @@ class SpeechRecognitionService {
   }
 
   /**
+   * Some Voice library versions always export a JS wrapper object,
+   * even when the native module is unavailable.
+   */
+  private hasUsableVoiceApi(): boolean {
+    return !!Voice && typeof Voice.isAvailable === 'function';
+  }
+
+  private isMissingNativeVoiceError(error: unknown): boolean {
+    const message = String((error as any)?.message || error || '');
+    return message.includes('isSpeechAvailable') || message.includes('of null');
+  }
+
+  private async safeCheckVoiceAvailability(): Promise<boolean> {
+    if (!this.hasUsableVoiceApi()) {
+      return false;
+    }
+
+    try {
+      const available = await Voice.isAvailable();
+      return available === 1 || available === true;
+    } catch (error) {
+      if (this.isMissingNativeVoiceError(error)) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Refresh voice availability at runtime
    */
   async refreshVoiceAvailability(): Promise<boolean> {
     try {
-      if (!Voice || Voice === null || typeof Voice.isAvailable !== 'function') {
-        this.voiceAvailable = false;
-        return false;
-      }
-
-      const available = await Voice.isAvailable();
-      this.voiceAvailable = available === 1 || available === true;
+      this.voiceAvailable = await this.safeCheckVoiceAvailability();
 
       if (this.voiceAvailable) {
         this.setupVoiceListeners();
@@ -65,7 +88,7 @@ class SpeechRecognitionService {
 
       return this.voiceAvailable;
     } catch (error) {
-      console.error('[SpeechRecognition] Refresh availability error:', error);
+      console.warn('[SpeechRecognition] Refresh availability check failed; using demo mode');
       this.voiceAvailable = false;
       return false;
     }
@@ -76,32 +99,29 @@ class SpeechRecognitionService {
    */
   private async initializeVoice() {
     try {
-      // Check if Voice module is available
-      if (!Voice || Voice === null) {
-        console.warn('[SpeechRecognition] Voice module is null - using demo mode');
+      if (!this.hasUsableVoiceApi()) {
+        console.warn('[SpeechRecognition] Voice module not found - using demo mode');
         this.voiceAvailable = false;
         this.isInitialized = true;
         return;
       }
-      
-      if (typeof Voice.isAvailable === 'function') {
-        const available = await Voice.isAvailable();
-        this.voiceAvailable = available === 1 || available === true;
-        
-        if (this.voiceAvailable) {
-          this.setupVoiceListeners();
-          console.log('[SpeechRecognition] Voice API initialized successfully');
-        } else {
-          console.warn('[SpeechRecognition] Voice API not available on this device');
-        }
+
+      this.voiceAvailable = await this.safeCheckVoiceAvailability();
+
+      if (this.voiceAvailable) {
+        this.setupVoiceListeners();
+        console.log('[SpeechRecognition] Voice API initialized successfully');
       } else {
-        console.warn('[SpeechRecognition] Voice module not found - using demo mode');
-        this.voiceAvailable = false;
+        console.warn('[SpeechRecognition] Voice API unavailable - demo mode');
       }
       
       this.isInitialized = true;
     } catch (error) {
-      console.error('[SpeechRecognition] Initialization error:', error);
+      if (this.isMissingNativeVoiceError(error)) {
+        console.warn('[SpeechRecognition] Native Voice module unavailable - demo mode');
+      } else {
+        console.error('[SpeechRecognition] Initialization error:', error);
+      }
       this.voiceAvailable = false;
       this.isInitialized = true; // Mark as initialized anyway
     }
@@ -112,7 +132,7 @@ class SpeechRecognitionService {
    */
   private setupVoiceListeners() {
     try {
-      if (!Voice || Voice === null) {
+      if (!this.hasUsableVoiceApi()) {
         console.warn('[SpeechRecognition] Cannot setup listeners - Voice is null');
         return;
       }
@@ -242,7 +262,7 @@ class SpeechRecognitionService {
       this.resultsCallback = onResult;
 
       // Check if Voice is available
-      const available = await Voice.isAvailable();
+      const available = await this.safeCheckVoiceAvailability();
       if (!available) {
         onResult({
           success: false,
