@@ -9,7 +9,7 @@ import Voice, {
   SpeechRecognizedEvent,
 } from '@react-native-voice/voice';
 import * as Speech from 'expo-speech';
-import { Platform, Alert } from 'react-native';
+import { Platform, PermissionsAndroid } from 'react-native';
 import { analyzePronunciation, PronunciationScore } from '../ml/phoneticAnalyzer';
 import { arabicPhoneticMap } from '../ml/arabicPhonetics';
 
@@ -26,6 +26,20 @@ export interface RecognitionResult {
   score?: PronunciationScore;
   error?: string;
   rawResults?: string[];
+  status?: VoiceRecognitionStatus;
+}
+
+export type VoiceRecognitionStatus =
+  | 'initializing'
+  | 'ready'
+  | 'unsupported_runtime'
+  | 'voice_engine_unavailable'
+  | 'permission_denied'
+  | 'start_failed';
+
+export interface VoiceRecognitionState {
+  status: VoiceRecognitionStatus;
+  message?: string;
 }
 
 class SpeechRecognitionService {
@@ -34,6 +48,11 @@ class SpeechRecognitionService {
   private currentLetter: string = '';
   private resultsCallback: ((result: RecognitionResult) => void) | null = null;
   private voiceAvailable: boolean = false;
+  private voiceState: VoiceRecognitionState = {
+    status: 'initializing',
+    message: 'Checking speech recognition availability...',
+  };
+  private recognitionTimeout: ReturnType<typeof setTimeout> | null = null;
   
   private config: SpeechRecognitionConfig = {
     language: 'en-US', // Using English recognition to capture phonetic approximations
@@ -44,6 +63,23 @@ class SpeechRecognitionService {
 
   constructor() {
     this.initializeVoice();
+  }
+
+  private setVoiceState(status: VoiceRecognitionStatus, message?: string) {
+    this.voiceState = { status, message };
+    this.voiceAvailable = status === 'ready';
+  }
+
+  private buildErrorResult(
+    error: string,
+    status: VoiceRecognitionStatus
+  ): RecognitionResult {
+    return {
+      success: false,
+      spokenText: '',
+      error,
+      status,
+    };
   }
 
   /**
@@ -79,17 +115,41 @@ class SpeechRecognitionService {
    * Refresh voice availability at runtime
    */
   async refreshVoiceAvailability(): Promise<boolean> {
-    try {
-      this.voiceAvailable = await this.safeCheckVoiceAvailability();
+    if (!this.hasUsableVoiceApi()) {
+      this.setVoiceState(
+        'unsupported_runtime',
+        'Speech recognition native module is unavailable in this runtime.'
+      );
+      return false;
+    }
 
-      if (this.voiceAvailable) {
+    try {
+      const available = await this.safeCheckVoiceAvailability();
+
+      if (available) {
         this.setupVoiceListeners();
+        this.setVoiceState('ready');
+        return true;
       }
 
-      return this.voiceAvailable;
+      this.setVoiceState(
+        'voice_engine_unavailable',
+        'Speech recognition engine is unavailable on this device.'
+      );
+      return false;
     } catch (error) {
-      console.warn('[SpeechRecognition] Refresh availability check failed; using demo mode');
-      this.voiceAvailable = false;
+      const message = String((error as any)?.message || error || 'Unknown error');
+      if (this.isMissingNativeVoiceError(error)) {
+        this.setVoiceState(
+          'unsupported_runtime',
+          'Speech recognition native module is unavailable in this runtime.'
+        );
+      } else {
+        this.setVoiceState(
+          'voice_engine_unavailable',
+          `Speech recognition availability check failed: ${message}`
+        );
+      }
       return false;
     }
   }
@@ -100,30 +160,89 @@ class SpeechRecognitionService {
   private async initializeVoice() {
     try {
       if (!this.hasUsableVoiceApi()) {
-        console.warn('[SpeechRecognition] Voice module not found - using demo mode');
-        this.voiceAvailable = false;
+        this.setVoiceState(
+          'unsupported_runtime',
+          'Speech recognition native module is unavailable in this runtime.'
+        );
         this.isInitialized = true;
         return;
       }
 
-      this.voiceAvailable = await this.safeCheckVoiceAvailability();
-
-      if (this.voiceAvailable) {
-        this.setupVoiceListeners();
-        console.log('[SpeechRecognition] Voice API initialized successfully');
-      } else {
-        console.warn('[SpeechRecognition] Voice API unavailable - demo mode');
-      }
+      await this.refreshVoiceAvailability();
       
       this.isInitialized = true;
     } catch (error) {
       if (this.isMissingNativeVoiceError(error)) {
-        console.warn('[SpeechRecognition] Native Voice module unavailable - demo mode');
+        this.setVoiceState(
+          'unsupported_runtime',
+          'Speech recognition native module is unavailable in this runtime.'
+        );
       } else {
         console.error('[SpeechRecognition] Initialization error:', error);
+        this.setVoiceState(
+          'voice_engine_unavailable',
+          'Unable to initialize speech recognition.'
+        );
       }
-      this.voiceAvailable = false;
-      this.isInitialized = true; // Mark as initialized anyway
+      this.isInitialized = true;
+    }
+  }
+
+  private async waitForInitialization(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+
+    const deadline = Date.now() + 2000;
+    while (!this.isInitialized && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+
+  private clearRecognitionTimeout() {
+    if (this.recognitionTimeout) {
+      clearTimeout(this.recognitionTimeout);
+      this.recognitionTimeout = null;
+    }
+  }
+
+  private async requestMicrophonePermission(): Promise<boolean> {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+
+    try {
+      const alreadyGranted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+      );
+
+      if (alreadyGranted) {
+        return true;
+      }
+
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+          title: 'Microphone permission',
+          message: 'AlifPlay needs microphone access for pronunciation practice.',
+          buttonPositive: 'Allow',
+          buttonNegative: 'Deny',
+        }
+      );
+
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        return true;
+      }
+
+      this.setVoiceState(
+        'permission_denied',
+        'Microphone permission is required for pronunciation practice.'
+      );
+      return false;
+    } catch (error) {
+      console.error('[SpeechRecognition] Permission request error:', error);
+      this.setVoiceState('start_failed', 'Unable to request microphone permission.');
+      return false;
     }
   }
 
@@ -176,13 +295,22 @@ class SpeechRecognitionService {
    */
   private onSpeechResults = (event: SpeechResultsEvent) => {
     console.log('[SpeechRecognition] Results:', event.value);
+    this.clearRecognitionTimeout();
     
     if (!event.value || event.value.length === 0) {
       this.handleResult({
         success: false,
         spokenText: '',
         error: 'No speech detected',
+        status: 'start_failed',
       });
+      return;
+    }
+
+    if (!this.currentLetter) {
+      this.handleResult(
+        this.buildErrorResult('No target letter selected for analysis.', 'start_failed')
+      );
       return;
     }
 
@@ -197,6 +325,7 @@ class SpeechRecognitionService {
       spokenText,
       score,
       rawResults: event.value,
+      status: 'ready',
     });
   };
 
@@ -205,13 +334,17 @@ class SpeechRecognitionService {
    */
   private onSpeechError = (event: SpeechErrorEvent) => {
     console.error('[SpeechRecognition] Error:', event.error);
+    this.clearRecognitionTimeout();
     
     let errorMessage = 'Recognition failed';
+    let status: VoiceRecognitionStatus = 'start_failed';
     
     if (event.error?.code === '7') {
       errorMessage = 'No speech detected. Please try again.';
     } else if (event.error?.code === '9') {
       errorMessage = 'Microphone permission denied';
+      status = 'permission_denied';
+      this.setVoiceState('permission_denied', errorMessage);
     } else if (event.error?.message) {
       errorMessage = event.error.message;
     }
@@ -220,6 +353,7 @@ class SpeechRecognitionService {
       success: false,
       spokenText: '',
       error: errorMessage,
+      status,
     });
   };
 
@@ -227,8 +361,10 @@ class SpeechRecognitionService {
    * Handle recognition result and trigger callback
    */
   private handleResult(result: RecognitionResult) {
+    this.isListening = false;
     if (this.resultsCallback) {
       this.resultsCallback(result);
+      this.resultsCallback = null;
     }
   }
 
@@ -239,18 +375,30 @@ class SpeechRecognitionService {
     arabicLetter: string,
     onResult: (result: RecognitionResult) => void
   ): Promise<void> {
-    try {
-      // Wait for initialization if needed
-      if (!this.isInitialized) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+    this.resultsCallback = onResult;
 
-      // Check if Voice API is available
+    try {
+      await this.waitForInitialization();
+
       const availableNow = await this.refreshVoiceAvailability();
       if (!availableNow) {
-        // Fallback: Use demo mode with simulated result
-        this.showDemoModeAlert();
-        this.simulateRecognition(arabicLetter, onResult);
+        const message =
+          this.voiceState.message ||
+          'Speech recognition is unavailable. Use a custom Android dev build on a real device.';
+        this.handleResult(
+          this.buildErrorResult(message, this.voiceState.status)
+        );
+        return;
+      }
+
+      const hasPermission = await this.requestMicrophonePermission();
+      if (!hasPermission) {
+        this.handleResult(
+          this.buildErrorResult(
+            'Microphone permission is required for pronunciation practice.',
+            'permission_denied'
+          )
+        );
         return;
       }
 
@@ -259,25 +407,14 @@ class SpeechRecognitionService {
       }
 
       this.currentLetter = arabicLetter;
-      this.resultsCallback = onResult;
-
-      // Check if Voice is available
-      const available = await this.safeCheckVoiceAvailability();
-      if (!available) {
-        onResult({
-          success: false,
-          spokenText: '',
-          error: 'Speech recognition not available. Using demo mode.',
-        });
-        this.simulateRecognition(arabicLetter, onResult);
-        return;
-      }
+      this.clearRecognitionTimeout();
 
       // Start recognition
       await Voice.start(this.config.language);
+      this.setVoiceState('ready');
       
       // Set timeout
-      setTimeout(() => {
+      this.recognitionTimeout = setTimeout(() => {
         if (this.isListening) {
           this.stopRecognition();
         }
@@ -285,54 +422,13 @@ class SpeechRecognitionService {
       
     } catch (error) {
       console.error('[SpeechRecognition] Start error:', error);
-      
-      // Fallback to demo mode
-      this.simulateRecognition(arabicLetter, onResult);
-    }
-  }
-
-  /**
-   * Simulate recognition for demo/testing purposes
-   */
-  private simulateRecognition(
-    arabicLetter: string,
-    onResult: (result: RecognitionResult) => void
-  ) {
-    console.log('[SpeechRecognition] Running in DEMO mode');
-    
-    // Wait 2 seconds to simulate listening
-    setTimeout(() => {
-      const phonetic = arabicPhoneticMap[arabicLetter];
-      if (!phonetic) {
-        onResult({
-          success: false,
-          spokenText: '',
-          error: 'Letter not found',
-        });
-        return;
-      }
-
-      // Simulate a good pronunciation (80% accuracy)
-      const score = analyzePronunciation(arabicLetter, phonetic.primary);
-      
-      onResult({
-        success: true,
-        spokenText: phonetic.primary,
-        score: {
-          ...score,
-          accuracy: Math.max(75, score.accuracy - 10), // Slightly reduce for demo
-          feedback: '🎭 Demo Mode: Try saying "' + phonetic.primary + '"',
-        },
-      });
-    }, 2000);
-  }
-
-  /**
-   * Show alert about demo mode
-   */
-  private showDemoModeAlert() {
-    if (Platform.OS === 'web') {
-      console.log('Running in demo mode - speech recognition not available on web');
+      this.setVoiceState('start_failed', 'Unable to start speech recognition.');
+      this.handleResult(
+        this.buildErrorResult(
+          'Unable to start speech recognition. Please try again.',
+          'start_failed'
+        )
+      );
     }
   }
 
@@ -341,7 +437,8 @@ class SpeechRecognitionService {
    */
   async stopRecognition(): Promise<void> {
     try {
-      if (this.voiceAvailable && Voice) {
+      this.clearRecognitionTimeout();
+      if (this.hasUsableVoiceApi()) {
         await Voice.stop();
       }
       this.isListening = false;
@@ -356,7 +453,8 @@ class SpeechRecognitionService {
    */
   async cancelRecognition(): Promise<void> {
     try {
-      if (this.voiceAvailable && Voice) {
+      this.clearRecognitionTimeout();
+      if (this.hasUsableVoiceApi()) {
         await Voice.cancel();
       }
       this.isListening = false;
@@ -422,7 +520,8 @@ class SpeechRecognitionService {
    */
   async destroy(): Promise<void> {
     try {
-      if (this.voiceAvailable && Voice) {
+      this.clearRecognitionTimeout();
+      if (this.hasUsableVoiceApi()) {
         await Voice.destroy();
         Voice.removeAllListeners();
       }
@@ -438,8 +537,11 @@ class SpeechRecognitionService {
    */
   async checkPermissions(): Promise<boolean> {
     try {
-      // Voice library handles permissions automatically
-      return this.voiceAvailable;
+      if (Platform.OS !== 'android') {
+        return true;
+      }
+
+      return PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO);
     } catch (error) {
       console.error('[SpeechRecognition] Permission check error:', error);
       return false;
@@ -450,7 +552,11 @@ class SpeechRecognitionService {
    * Check if voice recognition is available
    */
   isVoiceAvailable(): boolean {
-    return this.voiceAvailable;
+    return this.voiceState.status === 'ready';
+  }
+
+  getVoiceState(): VoiceRecognitionState {
+    return this.voiceState;
   }
 }
 
