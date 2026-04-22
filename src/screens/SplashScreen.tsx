@@ -1,9 +1,13 @@
 import React, { useEffect } from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import type { RootStackParamList } from '../navigation/AppNavigator';
+
+type SplashNavigationProp = StackNavigationProp<RootStackParamList, 'Splash'>;
 
 const SplashScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<SplashNavigationProp>();
 
   useEffect(() => {
     const timer = setTimeout(() => {
