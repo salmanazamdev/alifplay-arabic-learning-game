@@ -1,4 +1,4 @@
-# AlifPlay - Arabic Learning App for Kids 🎓
+# AlifPlay - Arabic Alphabet Learning App for Kids 🎓
 
 A beautiful, interactive mobile application built with React Native Expo to help children learn the Arabic alphabet through engaging games and activities.
 
