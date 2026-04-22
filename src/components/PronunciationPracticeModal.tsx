@@ -3,7 +3,7 @@
  * Enhanced screen with AI-powered speech recognition
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import {
   speechRecognitionService,
   RecognitionResult,
   PronunciationScore,
+  VoiceRecognitionState,
 } from '../services/speechRecognition';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadows } from '../constants';
 import { playSound } from '../utils/audio';
@@ -48,13 +49,46 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
   const [showScore, setShowScore] = useState(false);
   const [attemptHistory, setAttemptHistory] = useState<PronunciationScore[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [voiceState, setVoiceState] = useState<VoiceRecognitionState>({
+    status: 'initializing',
+    message: 'Checking speech recognition availability...',
+  });
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearFeedbackTimeout = () => {
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = null;
+    }
+  };
+
+  const getVoiceGuidanceText = (): string | null => {
+    switch (voiceState.status) {
+      case 'ready':
+        return null;
+      case 'initializing':
+        return 'Preparing speech recognition...';
+      case 'unsupported_runtime':
+        return 'Speech recognition needs a custom Android dev build on a real device.';
+      case 'permission_denied':
+        return 'Microphone permission is required. Enable it in Android settings.';
+      case 'voice_engine_unavailable':
+        return voiceState.message || 'Speech recognition engine is unavailable on this device.';
+      case 'start_failed':
+        return voiceState.message || 'Unable to start speech recognition. Please try again.';
+      default:
+        return 'Speech recognition is unavailable right now.';
+    }
+  };
+
+  const isVoiceReady = voiceState.status === 'ready';
+  const guidanceText = getVoiceGuidanceText();
 
   useEffect(() => {
     // Re-check voice availability each time modal opens
     const checkVoice = async () => {
-      const available = await speechRecognitionService.refreshVoiceAvailability();
-      setIsDemoMode(!available);
+      await speechRecognitionService.refreshVoiceAvailability();
+      setVoiceState(speechRecognitionService.getVoiceState());
     };
 
     if (visible) {
@@ -70,6 +104,7 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
       setAttemptHistory([]);
       setIsListening(false);
     } else {
+      clearFeedbackTimeout();
       // Stop listening if modal closes
       if (isListening) {
         speechRecognitionService.stopRecognition();
@@ -78,8 +113,23 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
     }
   }, [visible]);
 
+  useEffect(() => {
+    return () => {
+      clearFeedbackTimeout();
+    };
+  }, []);
+
   const handleStartListening = async () => {
     if (!letter) return;
+
+    await speechRecognitionService.refreshVoiceAvailability();
+    const latestState = speechRecognitionService.getVoiceState();
+    setVoiceState(latestState);
+
+    if (latestState.status !== 'ready') {
+      Alert.alert('Speech Recognition Unavailable', getVoiceGuidanceText() || 'Please try again.');
+      return;
+    }
 
     try {
       setIsListening(true);
@@ -113,6 +163,10 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
     setIsListening(false);
     setIsProcessing(false);
 
+    if (result.status) {
+      setVoiceState({ status: result.status, message: result.error });
+    }
+
     if (!result.success) {
       Alert.alert('Recognition Failed', result.error || 'Please try again');
       return;
@@ -131,7 +185,8 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
       }
 
       // Speak feedback after 1 second
-      setTimeout(() => {
+      clearFeedbackTimeout();
+      feedbackTimeoutRef.current = setTimeout(() => {
         speechRecognitionService.speakFeedback(result.score!.feedback);
       }, 1000);
     }
@@ -201,14 +256,14 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
             <Text style={styles.letterPronunciation}>"{letter.pronunciation}"</Text>
           </View>
 
-          {/* Demo Mode Banner */}
-          {isDemoMode && (
+          {/* Recognition Guidance Banner */}
+          {!!guidanceText && (
             <View style={styles.demoBanner}>
-              <Text style={styles.demoIcon}>🎭</Text>
+              <Text style={styles.demoIcon}>⚠️</Text>
               <View style={styles.demoTextContainer}>
-                <Text style={styles.demoTitle}>Demo Mode Active</Text>
+                <Text style={styles.demoTitle}>Speech Recognition Unavailable</Text>
                 <Text style={styles.demoText}>
-                  Speech recognition unavailable. The AI will simulate scoring based on the expected pronunciation.
+                  {guidanceText}
                 </Text>
               </View>
             </View>
@@ -244,7 +299,7 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
               onStartListening={handleStartListening}
               onStopListening={handleStopListening}
               onPlayPronunciation={handlePlayPronunciation}
-              disabled={isProcessing && !isListening}
+              disabled={(isProcessing && !isListening) || !isVoiceReady}
             />
           </View>
 
