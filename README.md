@@ -287,13 +287,13 @@ Currently supports:
 - [ ] Social features (leaderboards, sharing)
 - [ ] More languages support
 
-## 📄 License
+<!-- ## 📄 License
 
 [Add your license here]
 
 ## 👥 Contributors
 
-[Add contributors here]
+[Add contributors here] -->
 
 ## 🙏 Acknowledgments
 
