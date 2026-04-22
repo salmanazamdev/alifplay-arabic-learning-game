@@ -45,6 +45,7 @@ export interface VoiceRecognitionState {
 class SpeechRecognitionService {
   private isInitialized: boolean = false;
   private isListening: boolean = false;
+  private awaitingResult: boolean = false;
   private currentLetter: string = '';
   private resultsCallback: ((result: RecognitionResult) => void) | null = null;
   private voiceAvailable: boolean = false;
@@ -361,6 +362,8 @@ class SpeechRecognitionService {
    * Handle recognition result and trigger callback
    */
   private handleResult(result: RecognitionResult) {
+    this.clearRecognitionTimeout();
+    this.awaitingResult = false;
     this.isListening = false;
     if (this.resultsCallback) {
       this.resultsCallback(result);
@@ -407,6 +410,7 @@ class SpeechRecognitionService {
       }
 
       this.currentLetter = arabicLetter;
+      this.awaitingResult = true;
       this.clearRecognitionTimeout();
 
       // Start recognition
@@ -415,8 +419,14 @@ class SpeechRecognitionService {
       
       // Set timeout
       this.recognitionTimeout = setTimeout(() => {
-        if (this.isListening) {
+        if (this.awaitingResult) {
           this.stopRecognition();
+          this.handleResult(
+            this.buildErrorResult(
+              'No speech detected within the time limit. Please try again.',
+              'start_failed'
+            )
+          );
         }
       }, this.config.timeoutMs);
       
@@ -438,7 +448,7 @@ class SpeechRecognitionService {
   async stopRecognition(): Promise<void> {
     try {
       this.clearRecognitionTimeout();
-      if (this.hasUsableVoiceApi()) {
+      if (this.hasUsableVoiceApi() && this.isListening) {
         await Voice.stop();
       }
       this.isListening = false;
@@ -454,13 +464,15 @@ class SpeechRecognitionService {
   async cancelRecognition(): Promise<void> {
     try {
       this.clearRecognitionTimeout();
-      if (this.hasUsableVoiceApi()) {
+      if (this.hasUsableVoiceApi() && this.isListening) {
         await Voice.cancel();
       }
       this.isListening = false;
+      this.awaitingResult = false;
     } catch (error) {
       console.error('[SpeechRecognition] Cancel error:', error);
       this.isListening = false;
+      this.awaitingResult = false;
     }
   }
 
