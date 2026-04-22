@@ -103,6 +103,9 @@ npm start
 # Run on Android
 npm run android
 
+# Build and run a clean Android dev build
+npx expo run:android --clear
+
 # Run on iOS
 npm run ios
 
@@ -112,10 +115,43 @@ npm run web
 # Type check
 npx tsc --noEmit
 
-# Build for production
-npx expo build:android
-npx expo build:ios
+# Build with EAS
+eas build --platform android --profile development
+eas build --platform android --profile production
 ```
+
+## 🎤 Pronunciation AI Setup (Real Mode)
+
+Pronunciation scoring uses native speech recognition and does not simulate demo scoring.
+
+### Required runtime
+
+- Use a custom Android dev build (`expo run:android` or EAS dev build)
+- Use a real Android device for best results
+- Grant microphone permission when prompted
+
+### Not supported for pronunciation AI
+
+- Expo Go runtime for native voice recognition
+
+### Quick verification checklist
+
+```bash
+# 1) Confirm device is connected
+adb devices
+
+# 2) Build/run native Android app
+npx expo run:android --clear
+
+# 3) Open Pronunciation screen and tap AI Practice
+#    If unavailable, app shows actionable error (no simulated scoring)
+```
+
+### Troubleshooting
+
+- If you see `Microphone permission is required`, enable microphone in Android app settings.
+- If you see `native module is unavailable`, rebuild as a custom dev client (`expo run:android`).
+- If you see `speech engine unavailable`, test on a physical Android phone with Google speech services enabled.
 
 ## 🎨 Design System Usage
 
