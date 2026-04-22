@@ -62,8 +62,8 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
     }
   };
 
-  const getVoiceGuidanceText = (): string | null => {
-    switch (voiceState.status) {
+  const getVoiceGuidanceText = (state: VoiceRecognitionState): string | null => {
+    switch (state.status) {
       case 'ready':
         return null;
       case 'initializing':
@@ -73,16 +73,16 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
       case 'permission_denied':
         return 'Microphone permission is required. Enable it in Android settings.';
       case 'voice_engine_unavailable':
-        return voiceState.message || 'Speech recognition engine is unavailable on this device.';
+        return state.message || 'Speech recognition engine is unavailable on this device.';
       case 'start_failed':
-        return voiceState.message || 'Unable to start speech recognition. Please try again.';
+        return state.message || 'Unable to start speech recognition. Please try again.';
       default:
         return 'Speech recognition is unavailable right now.';
     }
   };
 
   const isVoiceReady = voiceState.status === 'ready';
-  const guidanceText = getVoiceGuidanceText();
+  const guidanceText = getVoiceGuidanceText(voiceState);
 
   useEffect(() => {
     // Re-check voice availability each time modal opens
@@ -127,7 +127,10 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
     setVoiceState(latestState);
 
     if (latestState.status !== 'ready') {
-      Alert.alert('Speech Recognition Unavailable', getVoiceGuidanceText() || 'Please try again.');
+      Alert.alert(
+        'Speech Recognition Unavailable',
+        getVoiceGuidanceText(latestState) || 'Please try again.'
+      );
       return;
     }
 
