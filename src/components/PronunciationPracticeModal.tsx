@@ -261,11 +261,11 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
 
           {/* Recognition Guidance Banner */}
           {!!guidanceText && (
-            <View style={styles.demoBanner}>
-              <Text style={styles.demoIcon}>⚠️</Text>
-              <View style={styles.demoTextContainer}>
-                <Text style={styles.demoTitle}>Speech Recognition Unavailable</Text>
-                <Text style={styles.demoText}>
+            <View style={styles.guidanceBanner}>
+              <Text style={styles.guidanceIcon}>⚠️</Text>
+              <View style={styles.guidanceTextContainer}>
+                <Text style={styles.guidanceTitle}>Speech Recognition Unavailable</Text>
+                <Text style={styles.guidanceText}>
                   {guidanceText}
                 </Text>
               </View>
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 5,
   },
-  demoBanner: {
+  guidanceBanner: {
     flexDirection: 'row',
     backgroundColor: '#FFF3CD',
     borderLeftWidth: 4,
@@ -431,20 +431,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Shadows.small,
   },
-  demoIcon: {
+  guidanceIcon: {
     fontSize: 32,
     marginRight: Spacing.sm,
   },
-  demoTextContainer: {
+  guidanceTextContainer: {
     flex: 1,
   },
-  demoTitle: {
+  guidanceTitle: {
     fontSize: 16,
     fontWeight: FontWeight.bold,
     color: '#856404',
     marginBottom: 4,
   },
-  demoText: {
+  guidanceText: {
     fontSize: 13,
     color: '#856404',
     lineHeight: 18,
