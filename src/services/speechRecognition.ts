@@ -102,7 +102,7 @@ class SpeechRecognitionService {
 
     try {
       const available = await Voice.isAvailable();
-      return available === 1 || available === true;
+      return Boolean(available);
     } catch (error) {
       if (this.isMissingNativeVoiceError(error)) {
         return false;
