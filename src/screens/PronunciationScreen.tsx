@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { Volume2, Mic } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { StatBadge, GradientCard } from '../components';
 import { PronunciationPracticeModal } from '../components/PronunciationPracticeModal';
@@ -112,7 +113,7 @@ const PronunciationScreen: React.FC = () => {
             style={styles.audioIconContainer}
             accessible={false}
           >
-            <Text style={styles.audioIcon}>🔊</Text>
+            <Volume2 size={16} color={Colors.white} strokeWidth={2.4} />
           </View>
           <Text 
             style={styles.letterText}
@@ -133,7 +134,7 @@ const PronunciationScreen: React.FC = () => {
           onPress={() => handleLetterLongPress(item)}
           activeOpacity={0.8}
         >
-          <Text style={styles.aiButtonIcon}>🎤</Text>
+          <Mic size={14} color={Colors.primaryBlue} strokeWidth={2.6} />
           <Text style={styles.aiButtonText}>AI Practice</Text>
         </TouchableOpacity>
       </View>
@@ -157,7 +158,7 @@ const PronunciationScreen: React.FC = () => {
               <Text style={styles.statNumber}>{arabicLetters.length}</Text>
               <Text style={styles.statLabel}>Letters</Text>
               <View style={styles.iconBadge}>
-                <Text style={styles.iconText}>🔊</Text>
+                <Volume2 size={16} color={Colors.white} strokeWidth={2.4} />
               </View>
             </View>
           </View>
@@ -259,9 +260,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Shadows.small,
   },
-  iconText: {
-    fontSize: 16,
-  },
   grid: {
     paddingHorizontal: Spacing.screenPadding,
   },
@@ -293,9 +291,6 @@ const styles = StyleSheet.create({
     ...Shadows.small,
     gap: 4,
   },
-  aiButtonIcon: {
-    fontSize: 14,
-  },
   aiButtonText: {
     fontSize: 12,
     fontWeight: FontWeight.bold,
@@ -309,9 +304,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'flex-end',
-  },
-  audioIcon: {
-    fontSize: FontSize.body,
   },
   letterText: {
     fontSize: FontSize.arabicLarge,

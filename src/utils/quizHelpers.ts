@@ -74,9 +74,9 @@ export const getStarsForScore = (scorePercentage: number): number => {
  * Get encouraging message based on score
  */
 export const getScoreMessage = (scorePercentage: number): string => {
-  if (scorePercentage === 100) return 'Perfect! Amazing! 🌟';
-  if (scorePercentage >= 90) return 'Excellent Work! 🎉';
-  if (scorePercentage >= 70) return 'Great Job! 👏';
-  if (scorePercentage >= 50) return 'Good Try! Keep Going! 💪';
-  return 'Practice More! You Can Do It! 🌱';
+  if (scorePercentage === 100) return 'Perfect! Amazing work.';
+  if (scorePercentage >= 90) return 'Excellent work.';
+  if (scorePercentage >= 70) return 'Great job.';
+  if (scorePercentage >= 50) return 'Good try. Keep going.';
+  return 'Practice more. You can do it.';
 };

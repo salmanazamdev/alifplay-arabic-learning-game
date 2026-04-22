@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { AlertTriangle } from 'lucide-react-native';
 import { SpeechButton } from './SpeechButton';
 import { AccuracyMeter } from './AccuracyMeter';
 import {
@@ -262,7 +263,7 @@ export const PronunciationPracticeModal: React.FC<PronunciationPracticeModalProp
           {/* Recognition Guidance Banner */}
           {!!guidanceText && (
             <View style={styles.guidanceBanner}>
-              <Text style={styles.guidanceIcon}>⚠️</Text>
+              <AlertTriangle size={26} color="#856404" strokeWidth={2.3} style={styles.guidanceIcon} />
               <View style={styles.guidanceTextContainer}>
                 <Text style={styles.guidanceTitle}>Speech Recognition Unavailable</Text>
                 <Text style={styles.guidanceText}>
@@ -432,7 +433,6 @@ const styles = StyleSheet.create({
     ...Shadows.small,
   },
   guidanceIcon: {
-    fontSize: 32,
     marginRight: Spacing.sm,
   },
   guidanceTextContainer: {

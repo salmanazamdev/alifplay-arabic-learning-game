@@ -249,15 +249,15 @@ export const analyzePronunciation = (
   // Generate feedback
   let feedback = '';
   if (finalAccuracy >= 90) {
-    feedback = 'Perfect pronunciation! 🌟';
+    feedback = 'Perfect pronunciation.';
   } else if (finalAccuracy >= 75) {
-    feedback = 'Great job! Almost perfect! 👍';
+    feedback = 'Great job. Almost perfect.';
   } else if (finalAccuracy >= 60) {
-    feedback = 'Good try! Keep practicing! 💪';
+    feedback = 'Good try. Keep practicing.';
   } else if (finalAccuracy >= 40) {
-    feedback = 'Not quite right. Listen again! 👂';
+    feedback = 'Not quite right. Listen again.';
   } else {
-    feedback = "Let's try again together! 🎯";
+    feedback = "Let's try again together.";
   }
   
   return {

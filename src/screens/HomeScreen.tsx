@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Brain, Volume2, Image as ImageIcon, Target } from 'lucide-react-native';
+import { Brain, Volume2, Image as ImageIcon, Target, Star, Flame, BarChart3 } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { loadProgress, UserProgress, DEFAULT_PROGRESS } from '../utils/storage';
@@ -116,7 +116,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         {/* Stats Card */}
         <View style={styles.statsCard}>
           <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>⭐</Text>
+            <Star size={30} color={Colors.primaryOrange} strokeWidth={2.5} style={styles.statIcon} />
             <Text style={styles.statValue}>{progress?.starsEarned || 0}</Text>
             <Text style={styles.statLabel}>Stars</Text>
           </View>
@@ -124,7 +124,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.statDivider} />
           
           <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>🔥</Text>
+            <Flame size={30} color={Colors.primaryPink} strokeWidth={2.5} style={styles.statIcon} />
             <Text style={styles.statValue}>{dayStreak}</Text>
             <Text style={styles.statLabel}>Day Streak</Text>
           </View>
@@ -132,7 +132,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.statDivider} />
           
           <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>📊</Text>
+            <BarChart3 size={30} color={Colors.primaryBlue} strokeWidth={2.5} style={styles.statIcon} />
             <Text style={styles.statValue}>Lv {currentLevel}</Text>
             <Text style={styles.statLabel}>{Math.round(totalProgress * 100)}% Done</Text>
           </View>
@@ -236,8 +236,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  statEmoji: {
-    fontSize: 32,
+  statIcon: {
     marginBottom: Spacing.xs,
   },
   statValue: {

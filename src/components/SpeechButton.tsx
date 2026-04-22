@@ -164,7 +164,7 @@ export const SpeechButton: React.FC<SpeechButtonProps> = ({
 
       {/* Status text */}
       <Text style={styles.statusText}>
-        {isListening ? 'Listening... 🎤' : 'Tap to speak'}
+        {isListening ? 'Listening...' : 'Tap to speak'}
       </Text>
     </View>
   );
