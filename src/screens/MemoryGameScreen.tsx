@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { Lock, Star } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadows } from '../constants';
 import { arabicLetters } from '../utils/gameData';
 import { DEFAULT_PROGRESS, loadProgress, saveProgress } from '../utils/storage';
@@ -265,12 +266,14 @@ const MemoryGameScreen: React.FC = () => {
     return (
       <View style={styles.starsRow}>
         {[0, 1, 2].map(index => (
-          <Text
+          <Star
             key={index}
-            style={[styles.starIcon, index < count ? styles.starIconActive : styles.starIconInactive]}
-          >
-            ★
-          </Text>
+            size={18}
+            strokeWidth={2.2}
+            color={index < count ? Colors.primaryYellowDark : Colors.textLight}
+            fill={index < count ? Colors.primaryYellowDark : 'transparent'}
+            style={index < count ? styles.starIconActive : styles.starIconInactive}
+          />
         ))}
       </View>
     );
@@ -303,7 +306,13 @@ const MemoryGameScreen: React.FC = () => {
               </Text>
               <View style={styles.levelStarsWrap}>{renderStars(bestStarsByLevel[index] || 0)}</View>
             </View>
-            <Text style={styles.levelAction}>{lockedLevel ? '🔒' : 'Play'}</Text>
+            {lockedLevel ? (
+              <View style={styles.levelActionIcon}>
+                <Lock size={18} color={Colors.textLight} strokeWidth={2.2} />
+              </View>
+            ) : (
+              <Text style={styles.levelAction}>Play</Text>
+            )}
           </TouchableOpacity>
         );
       })}
@@ -521,6 +530,10 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.extrabold,
     color: Colors.primaryBlueDark,
   },
+  levelActionIcon: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
   statsRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
@@ -544,16 +557,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
   },
-  starIcon: {
-    fontSize: 18,
-    fontWeight: FontWeight.extrabold,
-  },
   starIconActive: {
-    color: Colors.primaryYellowDark,
     opacity: 1,
   },
   starIconInactive: {
-    color: Colors.textLight,
     opacity: 0.35,
   },
   statLabel: {

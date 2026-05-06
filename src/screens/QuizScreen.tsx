@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { Check, X, Star, Volume2 } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { ProgressBar } from '../components';
 import { arabicLetters } from '../utils/gameData';
@@ -140,7 +141,7 @@ const QuizScreen: React.FC = () => {
           >
             <Text style={styles.letter}>{current.letter}</Text>
             <View style={styles.soundBadge}>
-              <Text style={styles.soundIcon}>🔊</Text>
+              <Volume2 size={16} color={Colors.white} strokeWidth={2.4} />
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -174,12 +175,12 @@ const QuizScreen: React.FC = () => {
               </Text>
               {showResult && isCorrectOption && (
                 <View style={styles.iconBadge}>
-                  <Text style={styles.optionIcon}>✓</Text>
+                  <Check size={16} color={Colors.success} strokeWidth={2.4} />
                 </View>
               )}
               {showResult && isSelected && !isCorrectOption && (
                 <View style={[styles.iconBadge, styles.wrongBadge]}>
-                  <Text style={styles.optionIcon}>✗</Text>
+                  <X size={16} color={Colors.error} strokeWidth={2.4} />
                 </View>
               )}
             </TouchableOpacity>
@@ -215,7 +216,7 @@ const QuizScreen: React.FC = () => {
               colors={[Colors.white, Colors.primaryPurpleLight]}
               style={styles.modalGradient}
             >
-              <Text style={styles.modalEmoji}>🎉</Text>
+              <Star size={54} color={Colors.primaryPurple} strokeWidth={2.2} style={styles.modalIcon} />
               <Text style={styles.modalTitle}>Quiz Complete!</Text>
               <Text style={styles.modalSubtitle}>
                 {getScoreMessage(percentage)}
@@ -229,15 +230,13 @@ const QuizScreen: React.FC = () => {
               {/* Stars */}
               <View style={styles.starsContainer}>
                 {[1, 2, 3].map((star) => (
-                  <Text 
-                    key={star} 
-                    style={[
-                      styles.star,
-                      star <= quizStars && styles.starActive
-                    ]}
-                  >
-                    ⭐
-                  </Text>
+                  <Star
+                    key={star}
+                    size={34}
+                    strokeWidth={2.2}
+                    color={star <= quizStars ? Colors.primaryOrange : Colors.border}
+                    fill={star <= quizStars ? Colors.primaryOrange : 'transparent'}
+                  />
                 ))}
               </View>
               
@@ -365,9 +364,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  soundIcon: {
-    fontSize: 18,
-  },
   options: {
     paddingHorizontal: Spacing.screenPadding,
     gap: Spacing.md,
@@ -401,11 +397,6 @@ const styles = StyleSheet.create({
   },
   wrongBadge: {
     backgroundColor: Colors.error,
-  },
-  optionIcon: {
-    fontSize: 16,
-    fontWeight: FontWeight.black,
-    color: Colors.white,
   },
   correctOption: {
     backgroundColor: Colors.successLight,
@@ -442,8 +433,7 @@ const styles = StyleSheet.create({
     padding: Spacing.xxl,
     alignItems: 'center',
   },
-  modalEmoji: {
-    fontSize: 64,
+  modalIcon: {
     marginBottom: Spacing.md,
   },
   modalTitle: {
@@ -478,13 +468,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     marginBottom: Spacing.md,
-  },
-  star: {
-    fontSize: 48,
-    opacity: 0.3,
-  },
-  starActive: {
-    opacity: 1,
   },
   starsText: {
     fontSize: FontSize.body,
