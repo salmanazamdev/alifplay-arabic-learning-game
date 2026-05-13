@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { Check, Sparkles, Star } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, Shadows, BorderRadius } from '../constants';
 import { ProgressBar, GradientButton } from '../components';
 import { imageMatchData, arabicLetters, ImageMatchPair } from '../utils/gameData';
@@ -251,7 +252,10 @@ const ImageMatchScreen: React.FC = () => {
           <ProgressBar progress={overallProgress} color={Colors.primaryGreen} />
           <View style={styles.statsRow}>
             <Text style={styles.statText}>{totalMatches}/{TOTAL_LEVELS * ITEMS_PER_LEVEL} matches</Text>
-            <Text style={styles.statText}>⭐ {totalStars} stars</Text>
+            <View style={styles.statRowItem}>
+              <Star size={14} color={Colors.primaryOrange} strokeWidth={2.4} />
+              <Text style={styles.statText}>{totalStars} stars</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -300,7 +304,7 @@ const ImageMatchScreen: React.FC = () => {
                 </Text>
                 {levelMatches.includes(item.id) && (
                   <View style={styles.checkBadge}>
-                    <Text style={styles.checkIcon}>✓</Text>
+                    <Check size={16} color={Colors.success} strokeWidth={2.4} />
                   </View>
                 )}
               </LinearGradient>
@@ -340,7 +344,7 @@ const ImageMatchScreen: React.FC = () => {
                 <Text style={styles.emojiImage}>{item.emoji}</Text>
                 {levelMatches.includes(item.id) && (
                   <View style={styles.checkBadge}>
-                    <Text style={styles.checkIcon}>✓</Text>
+                    <Check size={16} color={Colors.success} strokeWidth={2.4} />
                   </View>
                 )}
               </LinearGradient>
@@ -378,7 +382,7 @@ const ImageMatchScreen: React.FC = () => {
               colors={[Colors.white, Colors.primaryGreenLight]}
               style={styles.modalGradient}
             >
-              <Text style={styles.modalEmoji}>🎉</Text>
+              <Sparkles size={56} color={Colors.primaryGreen} strokeWidth={2.2} style={styles.modalIcon} />
               <Text style={styles.modalTitle}>
                 {currentLevel === TOTAL_LEVELS ? 'All Complete!' : 'Level Complete!'}
               </Text>
@@ -389,15 +393,13 @@ const ImageMatchScreen: React.FC = () => {
               {/* Stars */}
               <View style={styles.starsContainer}>
                 {[1, 2, 3].map((star) => (
-                  <Text 
-                    key={star} 
-                    style={[
-                      styles.star,
-                      star <= levelStars && styles.starActive
-                    ]}
-                  >
-                    ⭐
-                  </Text>
+                  <Star
+                    key={star}
+                    size={34}
+                    strokeWidth={2.2}
+                    color={star <= levelStars ? Colors.primaryGreen : Colors.border}
+                    fill={star <= levelStars ? Colors.primaryGreen : 'transparent'}
+                  />
                 ))}
               </View>
               
@@ -487,6 +489,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: Spacing.sm,
   },
+  statRowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
   statText: {
     fontSize: FontSize.caption,
     fontWeight: FontWeight.semibold,
@@ -563,11 +570,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkIcon: {
-    fontSize: 16,
-    fontWeight: FontWeight.black,
-    color: Colors.success,
-  },
   // Modal styles
   modalOverlay: {
     flex: 1,
@@ -587,8 +589,7 @@ const styles = StyleSheet.create({
     padding: Spacing.xxl,
     alignItems: 'center',
   },
-  modalEmoji: {
-    fontSize: 64,
+  modalIcon: {
     marginBottom: Spacing.md,
   },
   modalTitle: {
@@ -608,13 +609,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     marginBottom: Spacing.md,
-  },
-  star: {
-    fontSize: 48,
-    opacity: 0.3,
-  },
-  starActive: {
-    opacity: 1,
   },
   starsText: {
     fontSize: FontSize.h3,
