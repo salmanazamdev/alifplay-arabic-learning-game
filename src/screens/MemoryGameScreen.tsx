@@ -10,9 +10,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Lock, Star } from 'lucide-react-native';
+import { Lock, Sparkles, Star } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadows } from '../constants';
 import { arabicLetters } from '../utils/gameData';
+import { ProgressBar } from '../components';
 import { DEFAULT_PROGRESS, loadProgress, saveProgress } from '../utils/storage';
 
 interface MemoryCard {
@@ -250,7 +251,7 @@ const MemoryGameScreen: React.FC = () => {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Text style={styles.cardBackIcon}>?</Text>
+            <Sparkles size={24} color={Colors.white} strokeWidth={2.4} />
           </LinearGradient>
         )}
       </TouchableOpacity>
@@ -262,13 +263,13 @@ const MemoryGameScreen: React.FC = () => {
     await startLevel(currentLevel + 1);
   }, [currentLevel, startLevel]);
 
-  const renderStars = useCallback((count: number) => {
+  const renderStars = useCallback((count: number, size: number = 18) => {
     return (
       <View style={styles.starsRow}>
         {[0, 1, 2].map(index => (
           <Star
             key={index}
-            size={18}
+            size={size}
             strokeWidth={2.2}
             color={index < count ? Colors.primaryYellowDark : Colors.textLight}
             fill={index < count ? Colors.primaryYellowDark : 'transparent'}
@@ -278,6 +279,18 @@ const MemoryGameScreen: React.FC = () => {
       </View>
     );
   }, []);
+
+  const renderActionButton = (
+    label: string,
+    colors: [string, string],
+    onPress: () => void
+  ) => (
+    <TouchableOpacity style={styles.actionButton} onPress={onPress} activeOpacity={0.85}>
+      <LinearGradient colors={colors} style={styles.actionGradient}>
+        <Text style={styles.actionText}>{label}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
 
   const renderLevelSelection = () => (
     <View style={styles.levelsContainer}>
@@ -307,11 +320,16 @@ const MemoryGameScreen: React.FC = () => {
               <View style={styles.levelStarsWrap}>{renderStars(bestStarsByLevel[index] || 0)}</View>
             </View>
             {lockedLevel ? (
-              <View style={styles.levelActionIcon}>
+              <View style={[styles.levelActionPill, styles.levelActionLocked]}>
                 <Lock size={18} color={Colors.textLight} strokeWidth={2.2} />
               </View>
             ) : (
-              <Text style={styles.levelAction}>Play</Text>
+              <LinearGradient
+                colors={[Colors.primaryBlue, Colors.primaryBlueDark]}
+                style={styles.levelActionPill}
+              >
+                <Text style={styles.levelActionText}>Play</Text>
+              </LinearGradient>
             )}
           </TouchableOpacity>
         );
@@ -331,6 +349,7 @@ const MemoryGameScreen: React.FC = () => {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
+          <Sparkles size={22} color={Colors.white} strokeWidth={2.3} style={styles.completeBadgeIcon} />
           <Text style={styles.completeBadgeTitle}>Level Complete</Text>
           <Text style={styles.completeBadgeSubtitle}>{LEVELS[currentLevel].name}</Text>
         </LinearGradient>
@@ -351,73 +370,88 @@ const MemoryGameScreen: React.FC = () => {
           {renderStars(latestRoundStars)}
         </View>
 
-        <TouchableOpacity
-          style={styles.restartButton}
-          onPress={() => startLevel(currentLevel)}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.restartText}>Play Again</Text>
-        </TouchableOpacity>
-
-        {canGoNext && (
-          <TouchableOpacity
-            style={[styles.secondaryButton, { backgroundColor: Colors.primaryGreen }]}
-            onPress={handleNextLevel}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.secondaryButtonText}>Next Level</Text>
-          </TouchableOpacity>
+        {renderActionButton(
+          'Play Again',
+          [Colors.primaryBlue, Colors.primaryBlueDark],
+          () => startLevel(currentLevel)
         )}
 
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={backToLevels}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.secondaryButtonText}>Back to Levels</Text>
-        </TouchableOpacity>
+        {canGoNext && (
+          renderActionButton(
+            'Next Level',
+            [Colors.primaryGreen, Colors.primaryGreenDark],
+            handleNextLevel
+          )
+        )}
+
+        {renderActionButton(
+          'Back to Levels',
+          [Colors.primaryPurple, Colors.primaryPurpleDark],
+          backToLevels
+        )}
       </View>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" />
 
-      <LinearGradient
-        colors={[Colors.primaryYellow, Colors.primaryYellowDark]}
-        style={[styles.header, { paddingTop: insets.top + 16 }]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Text style={styles.headerTitle}>Memory Match</Text>
-        <Text style={styles.headerSubtitle}>
-          {mode === 'playing'
-            ? `${LEVELS[currentLevel].name} · Match Arabic letter pairs`
-            : 'Progressive levels for Arabic letter recognition'}
-        </Text>
-      </LinearGradient>
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>Memory Match</Text>
+            <Text style={styles.headerSubtitle}>
+              {mode === 'playing'
+                ? `${LEVELS[currentLevel].name} · Match Arabic letter pairs`
+                : 'Progressive levels for Arabic letter recognition'}
+            </Text>
+          </View>
+          <View style={styles.headerBadge}>
+            <Text style={styles.badgeLabel}>{mode === 'playing' ? 'Level' : 'Stars'}</Text>
+            {mode === 'playing' ? (
+              <Text style={styles.badgeValue}>{currentLevel + 1}/{LEVELS.length}</Text>
+            ) : (
+              <View style={styles.badgeRow}>
+                <Star size={16} color={Colors.primaryOrange} strokeWidth={2.4} />
+                <Text style={styles.badgeValue}>{totalStars}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        {mode === 'playing' && (
+          <View style={styles.headerProgress}>
+            <ProgressBar
+              progress={gameProgress}
+              color={Colors.primaryYellowDark}
+              backgroundColor={Colors.borderLight}
+              height={8}
+            />
+            <View style={styles.headerMetaRow}>
+              <View style={styles.headerMetaItem}>
+                <Text style={styles.headerMetaValue}>{matchedCount}/{pairCount}</Text>
+                <Text style={styles.headerMetaLabel}>Pairs</Text>
+              </View>
+              <View style={styles.headerMetaDivider} />
+              <View style={styles.headerMetaItem}>
+                <Text style={styles.headerMetaValue}>{moves}</Text>
+                <Text style={styles.headerMetaLabel}>Moves</Text>
+              </View>
+              <View style={styles.headerMetaDivider} />
+              <View style={styles.headerMetaItem}>
+                {renderStars(calculateStars(pairCount, Math.max(moves, 1)), 14)}
+                <Text style={styles.headerMetaLabel}>Rating</Text>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
 
       <View style={styles.content}>
         {mode === 'levels' && renderLevelSelection()}
 
         {mode === 'playing' && (
           <>
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{gameProgress}%</Text>
-                <Text style={styles.statLabel}>Level Progress</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{moves}</Text>
-                <Text style={styles.statLabel}>Moves</Text>
-              </View>
-              <View style={styles.statCard}>
-                {renderStars(calculateStars(pairCount, Math.max(moves, 1)))}
-                <Text style={styles.statLabel}>Rating</Text>
-              </View>
-            </View>
-
             <FlatList
               data={cards}
               keyExtractor={item => item.id}
@@ -430,13 +464,16 @@ const MemoryGameScreen: React.FC = () => {
             />
 
             <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.md }]}> 
-              <TouchableOpacity style={styles.secondaryButton} onPress={backToLevels}>
-                <Text style={styles.secondaryButtonText}>Levels</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.restartButton} onPress={() => startLevel(currentLevel)}>
-                <Text style={styles.restartText}>Restart Level</Text>
-              </TouchableOpacity>
+              {renderActionButton(
+                'Levels',
+                [Colors.primaryPurple, Colors.primaryPurpleDark],
+                backToLevels
+              )}
+              {renderActionButton(
+                'Restart Level',
+                [Colors.primaryBlue, Colors.primaryBlueDark],
+                () => startLevel(currentLevel)
+              )}
             </View>
           </>
         )}
@@ -457,23 +494,93 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
     borderBottomLeftRadius: BorderRadius.xxl,
     borderBottomRightRadius: BorderRadius.xxl,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  headerLeft: {
+    flex: 1,
+  },
   headerTitle: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: FontWeight.extrabold,
-    color: Colors.white,
-    textAlign: 'center',
+    color: Colors.text,
+    marginBottom: Spacing.xs,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
-    marginTop: Spacing.xs,
-    fontSize: FontSize.body,
-    color: Colors.white,
-    textAlign: 'center',
-    opacity: 0.95,
+    fontSize: 15,
+    fontWeight: FontWeight.regular,
+    color: Colors.textSecondary,
+  },
+  headerBadge: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+    minWidth: 90,
+    ...Shadows.medium,
+  },
+  badgeLabel: {
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textSecondary,
+    marginBottom: 2,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  badgeValue: {
+    fontSize: 18,
+    fontWeight: FontWeight.extrabold,
+    color: Colors.primaryYellowDark,
+  },
+  headerProgress: {
+    marginTop: Spacing.sm,
+  },
+  headerMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    ...Shadows.small,
+  },
+  headerMetaItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerMetaDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: Colors.borderLight,
+  },
+  headerMetaValue: {
+    fontSize: 16,
+    fontWeight: FontWeight.extrabold,
+    color: Colors.text,
+  },
+  headerMetaLabel: {
+    marginTop: 2,
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textSecondary,
   },
   content: {
     flex: 1,
@@ -495,15 +602,18 @@ const styles = StyleSheet.create({
   },
   levelCard: {
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    ...Shadows.small,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    ...Shadows.medium,
   },
   levelCardLocked: {
     backgroundColor: Colors.disabledBackground,
+    borderColor: Colors.border,
   },
   levelName: {
     fontSize: FontSize.h6,
@@ -525,32 +635,23 @@ const styles = StyleSheet.create({
   levelStarsWrap: {
     marginTop: Spacing.xs,
   },
-  levelAction: {
-    fontSize: FontSize.body,
-    fontWeight: FontWeight.extrabold,
-    color: Colors.primaryBlueDark,
-  },
-  levelActionIcon: {
-    paddingHorizontal: Spacing.sm,
+  levelActionPill: {
+    borderRadius: BorderRadius.full,
     paddingVertical: Spacing.xs,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    minWidth: 88,
     alignItems: 'center',
-    ...Shadows.small,
+    justifyContent: 'center',
   },
-  statValue: {
-    fontSize: 24,
-    color: Colors.primaryBlueDark,
+  levelActionText: {
+    fontSize: FontSize.bodySmall,
     fontWeight: FontWeight.extrabold,
+    color: Colors.white,
+  },
+  levelActionLocked: {
+    backgroundColor: Colors.disabledBackground,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   starsRow: {
     flexDirection: 'row',
@@ -562,11 +663,6 @@ const styles = StyleSheet.create({
   },
   starIconInactive: {
     opacity: 0.35,
-  },
-  statLabel: {
-    fontSize: FontSize.caption,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.semibold,
   },
   grid: {
     paddingBottom: Spacing.md,
@@ -581,6 +677,8 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     aspectRatio: 1,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
   },
   cardBack: {
     flex: 1,
@@ -589,24 +687,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Shadows.medium,
   },
-  cardBackIcon: {
-    fontSize: 34,
-    color: Colors.white,
-    fontWeight: FontWeight.extrabold,
-  },
   cardFace: {
     flex: 1,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.white,
-    borderWidth: 2,
-    borderColor: Colors.primaryBlueLight,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
-    ...Shadows.small,
+    ...Shadows.medium,
   },
   cardMatched: {
-    borderColor: Colors.primaryGreen,
-    backgroundColor: '#ECFDF3',
+    borderColor: Colors.success,
+    backgroundColor: Colors.successLight,
   },
   cardLetter: {
     fontSize: 42,
@@ -624,30 +717,6 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
     paddingTop: Spacing.lg,
   },
-  restartButton: {
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.primaryBlue,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    ...Shadows.small,
-  },
-  restartText: {
-    fontSize: FontSize.body,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  },
-  secondaryButton: {
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.primaryPurple,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    ...Shadows.small,
-  },
-  secondaryButtonText: {
-    fontSize: FontSize.body,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  },
   completeWrapper: {
     flex: 1,
     justifyContent: 'center',
@@ -657,13 +726,18 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
     gap: Spacing.md,
-    ...Shadows.medium,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    ...Shadows.large,
   },
   completeBadge: {
     borderRadius: BorderRadius.lg,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
     alignItems: 'center',
+  },
+  completeBadgeIcon: {
+    marginBottom: Spacing.xs,
   },
   completeBadgeTitle: {
     fontSize: FontSize.h4,
@@ -712,6 +786,21 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: FontWeight.semibold,
     textAlign: 'center',
+  },
+  actionButton: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    width: '100%',
+    ...Shadows.small,
+  },
+  actionGradient: {
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  actionText: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
   },
 });
 
