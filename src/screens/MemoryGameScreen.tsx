@@ -240,10 +240,22 @@ const MemoryGameScreen: React.FC = () => {
         disabled={isMatched || locked}
       >
         {isFlipped || isMatched ? (
-          <View style={[styles.cardFace, isMatched && styles.cardMatched]}>
-            <Text style={styles.cardLetter}>{item.letter}</Text>
-            <Text style={styles.cardName}>{item.name}</Text>
-          </View>
+          isMatched ? (
+            <LinearGradient
+              colors={[Colors.successLight, Colors.success]}
+              style={[styles.cardFace, styles.cardMatched]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={[styles.cardLetter, styles.cardMatchedText]}>{item.letter}</Text>
+              <Text style={[styles.cardName, styles.cardMatchedText]}>{item.name}</Text>
+            </LinearGradient>
+          ) : (
+            <View style={styles.cardFace}>
+              <Text style={styles.cardLetter}>{item.letter}</Text>
+              <Text style={styles.cardName}>{item.name}</Text>
+            </View>
+          )
         ) : (
           <LinearGradient
             colors={[Colors.primaryPurple, Colors.primaryPurpleDark]}
@@ -699,7 +711,9 @@ const styles = StyleSheet.create({
   },
   cardMatched: {
     borderColor: Colors.success,
-    backgroundColor: Colors.successLight,
+  },
+  cardMatchedText: {
+    color: Colors.white,
   },
   cardLetter: {
     fontSize: 42,

@@ -175,12 +175,12 @@ const QuizScreen: React.FC = () => {
               </Text>
               {showResult && isCorrectOption && (
                 <View style={styles.iconBadge}>
-                  <Check size={16} color={Colors.success} strokeWidth={2.4} />
+                  <Check size={16} color={Colors.white} strokeWidth={2.4} />
                 </View>
               )}
               {showResult && isSelected && !isCorrectOption && (
                 <View style={[styles.iconBadge, styles.wrongBadge]}>
-                  <X size={16} color={Colors.error} strokeWidth={2.4} />
+                  <X size={16} color={Colors.white} strokeWidth={2.4} />
                 </View>
               )}
             </TouchableOpacity>
