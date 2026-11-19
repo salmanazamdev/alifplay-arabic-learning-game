@@ -94,6 +94,25 @@ npm install
 npx expo start
 ```
 
+## 🔐 Security and Public Repository Notes
+
+- This repository does not store production API secrets in source code.
+- Local machine files (for example Android SDK paths and IDE metadata) should remain untracked.
+- Android release signing credentials must be provided locally and must never be committed.
+
+### Android Release Signing (Local Setup)
+
+Set these Gradle properties in your local `~/.gradle/gradle.properties` or project-level `android/gradle.properties` (local only):
+
+```properties
+ALIFPLAY_UPLOAD_STORE_FILE=/absolute/path/to/your-release-key.keystore
+ALIFPLAY_UPLOAD_STORE_PASSWORD=your_store_password
+ALIFPLAY_UPLOAD_KEY_ALIAS=your_key_alias
+ALIFPLAY_UPLOAD_KEY_PASSWORD=your_key_password
+```
+
+If these values are not present, release builds fall back to debug signing for local development only.
+
 ## 🎯 Development Commands
 
 ```bash
@@ -256,6 +275,20 @@ const styles = StyleSheet.create({
   }
 }
 ```
+
+## 🧾 Asset Attribution
+
+The app includes or can download external assets from third-party sources. Verify license terms before redistribution.
+
+- Fonts:
+  - Amiri font from the Amiri project repository.
+  - Cairo font from the Cairo project repository.
+- Images:
+  - Emoji image assets sourced from Twemoji.
+- Audio generation script:
+  - Arabic TTS download script uses Google Translate TTS endpoints for development convenience.
+
+You are responsible for confirming that each asset source and generated output is used in compliance with its license and terms of service.
 
 ## 🌍 Localization
 Currently supports:
