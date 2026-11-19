@@ -84,7 +84,7 @@ AlifPlay/
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/salmanazamdev/alifplay-arabic-learning-game.git
 cd AlifPlay
 
 # Install dependencies
