@@ -37,6 +37,7 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 # IDEs and editors
+.idea/
 
 # Documentation exports
 docs/research-context.md
