@@ -1,6 +1,6 @@
 <div align="center">
-<!-- TODO: add docs/branding/banner.png (1280x640 recommended) and uncomment -->
-<!-- <img src="docs/branding/banner.png" alt="AlifPlay banner" width="100%" /> -->
+
+ <img src="docs/branding/banner.png" alt="AlifPlay banner" width="100%" />
  
 # 🌙 AlifPlay
  
@@ -88,25 +88,19 @@ Real on-device speech recognition scores how a child actually pronounces each le
  
 ## 📸 Screenshots
  
-<!--
-TODO: drop your screenshots in docs/screenshots/ and uncomment this block.
 <div align="center">
 <table>
   <tr>
     <td align="center"><img src="docs/screenshots/home.png" width="200" /><br/><b>Home</b></td>
-    <td align="center"><img src="docs/screenshots/pronunciation.png" width="200" /><br/><b>Pronunciation</b></td>
-    <td align="center"><img src="docs/screenshots/quiz.png" width="200" /><br/><b>Quiz</b></td>
+    <td align="center"><img src="docs/screenshots/audio.png" width="200" /><br/><b>Pronunciation</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/image-match.png" width="200" /><br/><b>Image Match</b></td>
-    <td align="center"><img src="docs/screenshots/memory.png" width="200" /><br/><b>Memory Match</b></td>
-    <td align="center"><img src="docs/screenshots/results.png" width="200" /><br/><b>Results</b></td>
+    <td align="center"><img src="docs/screenshots/imagematch.png" width="200" /><br/><b>Image Match</b></td>
+    <td align="center"><img src="docs/screenshots/quiz.png" width="200" /><br/><b>Quiz</b></td>
   </tr>
 </table>
 </div>
--->
- 
-> 📱 Screenshots and a demo GIF are coming soon. Meanwhile, [run it yourself](#-quick-start) in under 2 minutes.
+
  
 ---
  
