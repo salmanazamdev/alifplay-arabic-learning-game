@@ -1,6 +1,6 @@
 <div align="center">
 
- <img src="docs/branding/banner.png" alt="AlifPlay banner" width="100%" />
+ <img src="docs/screenshots/branding/banner.png" alt="AlifPlay banner" width="100%" />
  
 # 🌙 AlifPlay
  
